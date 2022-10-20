@@ -1,0 +1,38 @@
+#!/bin/bash
+#PBS -W group_list=hopper-group
+#PBS -A rangamani-hopper-gpu
+#PBS -q home-hopper
+#PBS -l nodes=1:ppn=4:gpu3090
+#PBS -l walltime=48:00:00
+#PBS -M ctlee@ucsd.edu
+#PBS -m abe
+#PBS -N $SYSTEM_NAME
+#PBS -o $SYSTEM_NAME.out
+#PBS -e $SYSTEM_NAME.err
+#PBS -V
+
+set -e      # EXIT if any command fails (set -o errexit)
+set -u      # Toggle nounset
+
+INITDIR=$INITDIR
+GMXBIN=$GMXBIN
+
+echo "Using $${PBS_NUM_PPN} CPU cores."
+echo "CUDA visible devices: $${CUDA_VISIBLE_DEVICES}"
+
+export GMX_GPU_DD_COMMS=1
+export GMX_FORCE_UPDATE_DEFAULT_GPU=1
+
+module purge
+module load gnu/7.2.0
+module load cuda/11.2.0
+
+
+#cd $$INITDIR
+#cp -r system_tscc.top index.ndx $PREV_RUN.gro $$TMPDIR #copy inputs to temporary local scratch dir
+cd $$TMPDIR
+
+$$GMXBIN grompp -p $$INITDIR/system.top -f $MDP_BASE/$MDPFILE -n $$INITDIR/index.ndx -maxwarn 10 -c $$INITDIR/$PREV_RUN.gro -o ./$CURR_RUN.tpr -r $$INITDIR/minimization1.gro
+$$GMXBIN mdrun -deffnm $CURR_RUN -nt 4 -update gpu -pin on -nstlist 100
+
+rsync -aHAXx --numeric-ids * $$INITDIR  #copy outputs to lustre filesystem
