@@ -16,7 +16,7 @@ step = 0.5  # nm
 
 def _calculate_spectrum(args):
     gro, traj, selection, path = args
-    u = MDAnalysis.Universe(gro, *map(str, traj))
+    u = MDAnalysis.Universe(gro, str(traj), continuous=True)
 
     dims = [u.dimensions[0] for ts in u.trajectory]
     min_dimension = np.min(dims)
@@ -39,17 +39,16 @@ def _calculate_spectrum(args):
         pickle.dump(mc, handle, protocol=pickle.HIGHEST_PROTOCOL)
 
 
-simulations = [1, 2, 3, 4, 5, 6, 7, 8,9,10,11]
 jobs = []
 
 # Iterate over simulations to process
-for sim in simulations:
+for sim in util.simulations:
     # print(f"Processing: {sim}")
-    gro = util.analysis_path / f"{sim}/po4_only.gro"
-    # traj = util.analysis_path / f"{sim}/po4_only.xtc"
-    traj = [util.analysis_path / f"{sim}/po4_{i}.xtc" for i in range(1, 6)]
+    gro = util.analysis_path / sim / "po4_only.gro"
+    traj = util.analysis_path / f"{sim}/po4_all.xtc"
+    # traj = [util.analysis_path / sim / f"po4_{i}.xtc" for i in range(1, 6)]
 
-    t = (gro, traj, "name PO4 or name PO41 or name PO42", util.analysis_path / f"{sim}")
+    t = (gro, traj, "name PO4 GL0", util.analysis_path / sim)
     # print(t)
     jobs.append(t)
 

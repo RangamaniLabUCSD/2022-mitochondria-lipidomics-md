@@ -173,8 +173,9 @@ class LStensor:
         else:
             mult = -1
         for i in range(1, nfiles):
-            if i % 1000 == 0:
-                print(i)
+            # CTL print status
+            # if i % 1000 == 0:
+            #     print(i)
             tdata,tbox,tx,ty,tz = self.__readGridbin__(files[i])
             self.data_grid = self.data_grid + mult*tdata
             if (bAvg == 'avg'):

@@ -15,250 +15,152 @@ from LStensor import LStensor
 import pandas as pd
 
 
-# simulations = ["1", "2", "3", "4", "5", "6", "7"]
-simulations = ["8", "9", "10", "11"]
-
 def _stage(sim):
+    """Stage trajectories for parallel stress calculation
 
-    # print(f"Processing {sim}...")
-    sim_dir = util.sim_path / sim
-    assert sim_dir.exists()
+    Args:
+        sim (str): Simulation directory
+    """
+    print(sim)
+    sim_dir = util.scratch_sim_path / sim
+    if not sim_dir.exists():
+        raise RuntimeError(f"{sim_dir} is missing")
 
-    ref_configuration = sim_dir / "production5+100.gro"
+    ref_configuration = sim_dir / "production3+100.gro"
     if not ref_configuration.exists():
         return
 
     top = sim_dir / "system.top"
     assert top.exists()
+    ndx = sim_dir / "index.ndx"
+    assert ndx.exists()
 
     stress_mdp = util.mdp_path / "step8_stress.mdp"
     assert stress_mdp.exists()
 
     # Make sure the staging directory exists
     staging_dir = util.analysis_path / sim
-    if not staging_dir.exists():
-        os.makedirs(staging_dir)
-
     stresscalc_dir = staging_dir / "stress_calc"
-    if not stresscalc_dir.exists():
-        os.mkdir(stresscalc_dir)
+    stresscalc_dir.mkdir(parents=True, exist_ok=True)
 
     ##### GO INTO STAGING_DIR
     os.chdir(staging_dir)
 
-    # PARSE INDEXES
-    ndx = sim_dir / "index.ndx"
-    # if ndx.exists():
-    #     ndx.unlink()
-    # subprocess.run(
-    #     f'GMX_MAXBACKUP=-1 touch analysis.ndx; printf "a *\nname 0 System\nr POPC POPS POP2\nname 1 membrane\nq\nq" | {util.gmxls_bin} make_ndx -f {ref_configuration} -n analysis.ndx -o analysis.ndx',
-    #     shell=True,
-    #     check=True,
-    #     capture_output=True,
-    # )
-
-    # check_ndx_cmd = f"{util.gmxls_bin} check -n analysis.ndx"
-    # subprocess.run(check_ndx_cmd, shell=True, check=True, capture_output=True)
-
+    ### GROMPP generate stress.tpr
     if (stresscalc_dir / "stress.tpr").exists():
         (stresscalc_dir / "stress.tpr").unlink()
 
-    # GROMPP generate stress.tpr
-    grompp_cmd = f"{util.gmxls_bin} grompp -p {sim_dir}/system.top -f {stress_mdp} -n {ndx} -o ./stress_calc/stress.tpr -c {ref_configuration} -maxwarn 10"
+    grompp_cmd = f"{util.gmxls_bin} grompp -p {top} -f {stress_mdp} -n {ndx} -o ./stress_calc/stress.tpr -c {ref_configuration} -maxwarn 10"
     subprocess.run(grompp_cmd, shell=True, check=True, capture_output=True)
 
-    system_index_cmd = f"{util.gmxls_bin} check -n {ndx} | grep System | awk '{{ print $1 }}'"
-    p = subprocess.run(
-        system_index_cmd, shell=True, check=True, capture_output=True
+    ### GET NUMBERS CORRESPONDING TO INDEXES
+    system_index_cmd = (
+        f"{util.gmxls_bin} check -n {ndx} | grep system | awk '{{ print $1 }}'"
     )
+    p = subprocess.run(system_index_cmd, shell=True, check=True, capture_output=True)
     if not p.stdout:
         raise RuntimeError("Could not identify system index")
     system_index = int(p.stdout)
 
-    membrane_index_cmd = f"{util.gmxls_bin} check -n {ndx} | grep membrane | awk '{{ print $1 }}'"
-    p = subprocess.run(
-        membrane_index_cmd, shell=True, check=True, capture_output=True
+    membrane_index_cmd = (
+        f"{util.gmxls_bin} check -n {ndx} | grep membrane | awk '{{ print $1 }}'"
     )
+    p = subprocess.run(membrane_index_cmd, shell=True, check=True, capture_output=True)
     if not p.stdout:
         raise RuntimeError("Could not identify membrane index")
     membrane_index = int(p.stdout)
 
-    #########################
-    #  TRAJCONV
-    #########################
-    original_traj = sim_dir / "production5+100.trr"
-    # centered_traj = staging_dir / "cen.trr"
-    # # In theory it would be good to validate that the centered_traj is complete
-    # # but there's no great way to do this without a lot of effort
-    # if centered_traj.exists():
-    #     print(f"{centered_traj}... exists")
-    # else:
-    #     trjconv_cmd = f"echo '{membrane_index} {system_index}' | {util.gmxls_bin} trjconv -f {original_traj} -o {centered_traj} -n {ndx} -center -s ./stress_calc/stress.tpr"
-    #     # print(trjconv_cmd)
-    #     subprocess.run(trjconv_cmd, shell=True, check=True)
+    #### RUN TRAJCONV
+    original_traj = sim_dir / "production3+100.trr"
+    (staging_dir / "frames").mkdir(parents=True, exist_ok=True)
 
-    # if (staging_dir / "frames").exists():
-    #     pass
-    # else:
-    # os.mkdir("frames")
-    # SPLIT INTO REPRESENTATIVE FRAMES
-    trjconv_cmd = f"echo '{membrane_index} {system_index}' | {util.gmxls_bin} trjconv -f {original_traj} -o ./frames/frame.trr -n {ndx} -center -split 5 -s ./stress_calc/stress.tpr"
-    # print(trjconv_cmd)
+    trjconv_cmd = f"echo '{membrane_index} {system_index}' | {util.gmxls_bin} trjconv -f {original_traj} -o {staging_dir}/frames/frame.trr -n {ndx} -center -split 5 -s ./stress_calc/stress.tpr"
     subprocess.run(trjconv_cmd, shell=True, check=True)
 
 
-def stage():
-    process_map(_stage, simulations, max_workers=7)
-
+def stage(jobs):
+    """Center and split trajectories for fast parallel calculation of stress"""
+    process_map(_stage, jobs, max_workers=7)
 
 
 def _compute_stress(args):
-    tpr = args[0]
-    trr = args[1]
-    out = args[2]
-    cwd = args[3]
+    """Compute stresses by rerunning
 
+    Args:
+        args (Tuple): Tuple of TPR, TRR, OUT, CWD
+    """
+    tpr, trr, out, cwd = args
     os.chdir(cwd)
-    rerun_cmd = f"GMX_MAXBACKUP=-1 {util.gmxls_bin} mdrun -s {tpr} -rerun {trr} -ols {out} -localsgrid 0.1 -lsgridx 27 -lsgridy 27"
-    # print(rerun_cmd)
+    rerun_cmd = f"GMX_MAXBACKUP=-1 {util.gmxls_bin} mdrun -s {tpr} -rerun {trr} -ols {out} -localsgrid 0.1 -lsgridx 1 -lsgridy 1"
     p = subprocess.run(rerun_cmd, shell=True, check=True, capture_output=True)
     if p.returncode != 0:
         print(p.stderr)
 
 
-def calculate_stresses():
+def calculate_stresses(sims):
     jobs = []
 
     # Iterate over simulations to process
-    for sim in simulations:
+    for sim in sims:
         print(f"\tProcessing {sim}...")
-        staging_dir = util.analysis_path / sim
+        staging_dir = util.analysis_path / f"{sim}"
 
         stresscalc_dir = staging_dir / "stress_calc"
-        if not stresscalc_dir.exists():
-            os.mkdir(stresscalc_dir)
-        if not (stresscalc_dir / "frames").exists():
-            os.mkdir(stresscalc_dir / "frames")
+        (stresscalc_dir / "frames").mkdir(parents=True, exist_ok=True)
 
-        if not (util.analysis_path / f"{sim}/frames").exists():
+        if not (staging_dir / "frames").exists():
             print(f"Frames for system {sim} are missing... continuing...")
             continue
 
-        tpr = staging_dir / "stress_calc/stress.tpr"
+        tpr = stresscalc_dir / "stress.tpr"
         assert tpr.exists()
 
+        # TODO: change this to not be a hardcoded number
         for i in range(0, 20001):
-            frame = util.analysis_path / f"{sim}/frames/frame{i}.trr"
+            frame = staging_dir / f"frames/frame{i}.trr"
             if not frame.exists():
+                print(f"Missing frame: {frame}")
                 continue
             frame_stress = stresscalc_dir / f"frames/frame{i}.dat"
             if (stresscalc_dir / f"frames/frame{i}.dat0").exists():
                 continue
-            jobs.append([tpr, frame, frame_stress, staging_dir])
-    process_map(_compute_stress, jobs, max_workers=24, chunksize=1)
+            jobs.append((tpr, frame, frame_stress, staging_dir))
+    process_map(_compute_stress, jobs, max_workers=24, chunksize=100)
 
 
-# def _postprocess(args):
-#     stresscalc_dir = args[0]
-#     files = args[1]
-
-#     # print(f"Starting {stresscalc_dir}")
+# def _z_profile_worker(args):
+#     stresscalc_dir, i = args
 #     os.chdir(stresscalc_dir)
 
-#     if not (stresscalc_dir / "averaged_stress.dat0").exists():
-#         tensortools_cmd = f"python {util.script_path}/tensortools.py -f frames/frame*.dat0 -o {stresscalc_dir}/averaged_stress.dat0"
-#         subprocess.run(tensortools_cmd, shell=True, check=True)
-
-#     tensortools_cmd = f"python {util.script_path}/tensortools.py --prof z -f {stresscalc_dir}/averaged_stress.dat0 -o {stresscalc_dir}/z_profile_stress.txt"
-#     subprocess.run(tensortools_cmd, shell=True, check=True)
-
-#     arr = pd.read_csv(
-#         f"{stresscalc_dir}/z_profile_stress.txt",
-#         sep="\t",
-#         header=None,
-#         names=["z", "Sxx", "Sxy", "Sxz", "Syx", "Syy", "Syz", "Szx", "Szy", "Szz"],
-#         skiprows=[0, 1],
-#         usecols=[0, 1, 2, 3, 4, 5, 6, 7, 8, 9],
-#     )
-
-#     size = max(arr["z"])
-#     arr["z"] = arr["z"].apply(
-#         lambda x: x - (size / 2)
-#     )  # adjusting so that zero is the midpoint, which should be the middle of the bilayer if the centering worked
-
-#     lateral = -0.5 * 100 * (arr["Sxx"] + arr["Syy"])  # kpa
-#     normal = -100 * arr["Szz"]  # kpa
-#     lp = lateral - normal
-#     arr["LP_(kPA)"] = lp
-#     # print(lp)
-
-#     stress = ["Sxx", "Sxy", "Sxz", "Syx", "Syy", "Syz", "Szx", "Szy", "Szz"]
-#     arr[stress] = arr[stress].apply(lambda x: x * 100)  # converting the data into kPa
-#     # print(arr['Sxx'])
-#     arr.to_csv(f"{stresscalc_dir}/lateral_pressure.csv")
+#     tensortools_cmd = f"python {util.script_path}/tensortools.py --prof z -f frames/frame{i}.dat0 -o frames_z/frame_z_{i}.dat0"
+#     p = subprocess.run(tensortools_cmd, shell=True)
+#     if p.returncode != 0:
+#         print(p.stderr, stresscalc_dir, i)
 
 
-# def postprocess():
+# def generate_z_profiles(sims):
+#     print("Integrating to obtain z-profiles per frame...")
 #     jobs = []
-
-#     print(len(util.simulations))
 #     # Iterate over simulations to process
-#     for sim, t in util.simulations.items():
-#         print(f"Processing {sim}...")
-#         staging_dir = util.analysis_path / sim
-#         stresscalc_dir = staging_dir / "stress_calc"
+#     for sim in sims:
+#         print(f"\tScheduling jobs for {sim}...")
+#         stresscalc_dir = util.analysis_path / sim / "stress_calc"
+#         frames_z_dir = stresscalc_dir / "frames_z"
+#         frames_z_dir.mkdir(exist_ok=True)
 
-#         files = []
+#         # TODO: change this to not be a hardcoded number
 #         for i in range(0, 20001):
 #             frame_stress = stresscalc_dir / f"frames/frame{i}.dat0"
 #             if not frame_stress.exists():
 #                 print(f"{frame_stress} is missing")
-#             files.append(frame_stress)
-#         jobs.append((stresscalc_dir, files))
-#     process_map(_postprocess, jobs, max_workers=12)
-
-
-
-def _z_profile_worker(args):
-    stresscalc_dir = args[0]
-    i = args[1]
-
-    os.chdir(stresscalc_dir)
-
-    # if not (stresscalc_dir / "averaged_stress.dat0").exists():
-    tensortools_cmd = f"python {util.script_path}/tensortools.py --prof z -f frames/frame{i}.dat0 -o frames_z/frame_z_{i}.dat0"
-    p = subprocess.run(tensortools_cmd, shell=True)
-    if p.returncode != 0:
-        print(p.stderr, stresscalc_dir, i)
-
-
-
-def generate_z_profiles():
-    print("Integrating to obtain z-profiles per frame...")
-    jobs = []
-    # Iterate over simulations to process
-    for sim in simulations:
-        print(f"\tScheduling jobs for {sim}...")
-        staging_dir = util.analysis_path / sim
-        stresscalc_dir = staging_dir / "stress_calc"
-        
-        frames_z_dir = stresscalc_dir / "frames_z"
-
-        if not frames_z_dir.exists():
-            frames_z_dir.mkdir()
-
-        for i in range(0, 20001):
-            frame_stress = stresscalc_dir / f"frames/frame{i}.dat0"
-            if not frame_stress.exists():
-                print(f"{frame_stress} is missing")
-                continue
-            if not (frames_z_dir / f"frame_z_{i}.dat0").exists():
-                jobs.append((stresscalc_dir, i))
-    process_map(_z_profile_worker, jobs, max_workers=24, chunksize=100)
+#                 continue
+#             if not (frames_z_dir / f"frame_z_{i}.dat0").exists():
+#                 jobs.append((stresscalc_dir, i))
+#     process_map(_z_profile_worker, jobs, max_workers=24, chunksize=100)
 
 
 def _average_z_worker(stresscalc_dir):
-    tensortools_cmd = f"python {util.script_path}/tensortools.py -f {stresscalc_dir}/frames_z/frame_z_*.dat0 -o {stresscalc_dir}/z_profile_stress.txt"
+    tensortools_cmd = f"python {util.script_path}/tensortools.py -f {stresscalc_dir}/frames/frame*.dat0 -o {stresscalc_dir}/z_profile_stress.txt"
     subprocess.run(tensortools_cmd, shell=True, check=True)
 
     arr = pd.read_csv(
@@ -286,23 +188,25 @@ def _average_z_worker(stresscalc_dir):
     # print(arr['Sxx'])
     arr.to_csv(f"{stresscalc_dir}/lateral_pressure.csv")
 
-def average_z_profiles():
+
+def average_z_profiles(sims):
     print("Averaging z-profiles and generating lateral pressure profile...")
     jobs = []
 
     # Iterate over simulations to process
-    for sim in simulations:
+    for sim in sims:
         print(f"\tScheduling jobs for {sim}...")
-        staging_dir = util.analysis_path / sim
-        stresscalc_dir = staging_dir / "stress_calc"
+        stresscalc_dir = util.analysis_path / sim / "stress_calc"
 
-        if not (stresscalc_dir / "frames_z").exists():
-            print(f"\t\t Missing frames_z dir at {stresscalc_dir}")
+        if not (stresscalc_dir / "frames").exists():
+            print(f"\t\t Missing frames dir at {stresscalc_dir}")
             continue
         else:
             for i in range(0, 20001):
-                if not (stresscalc_dir / f"frames_z/frame_z_{i}.dat0").exists():
-                    print(f"\t\t{stresscalc_dir / f'frames_z/frame_z_{i}.dat0'} is missing...")
+                if not (stresscalc_dir / f"frames/frame{i}.dat0").exists():
+                    print(
+                        f"\t\t{stresscalc_dir / f'frames/frame{i}.dat0'} is missing..."
+                    )
                     break
         jobs.append((stresscalc_dir))
     process_map(_average_z_worker, jobs, max_workers=12)
@@ -324,12 +228,16 @@ if __name__ == "__main__":
 
     options = parser.parse_args()
 
+    jobs = []
+    for sim in util.simulations:
+        jobs.append(f"{sim}_small")
+
     if options.stage:
-        stage()
+        stage(jobs)
 
     if options.run:
-        calculate_stresses()
+        calculate_stresses(jobs)
 
     if options.postprocess:
-        generate_z_profiles()
-        average_z_profiles()
+        # generate_z_profiles(jobs)
+        average_z_profiles(jobs)

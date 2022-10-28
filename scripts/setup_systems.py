@@ -142,7 +142,9 @@ for sim, composition in simulations.items():
         sim_dir.mkdir(parents=True, exist_ok=True)
 
         if size == "small":
-            args = args = f"insane -salt 0.15 -sol W:90 -sol WF:10 -x {box_size[0]} -y {box_size[1]} -z {box_size[2]} -o {grofile} -p {topfile}  -pbc rectangular "
+            args = (
+                args
+            ) = f"insane -salt 0.15 -sol W:90 -sol WF:10 -x {box_size[0]} -y {box_size[1]} -z {box_size[2]} -o {grofile} -p {topfile}  -pbc rectangular "
         else:
             args = f"insane -salt 0.15 -sol W -x {box_size[0]} -y {box_size[1]} -z {box_size[2]} -o {grofile} -p {topfile}  -pbc rectangular "
         for lipid, chi in composition.items():
@@ -164,8 +166,7 @@ for sim, composition in simulations.items():
             ndx.write(membrane, name="membrane")
 
 
-# check systems
-
+# Compare the discretized composition to the target composition
 for sim, composition in simulations.items():
     for size in ["large", "small"]:
         if size == "large":
@@ -177,11 +178,9 @@ for sim, composition in simulations.items():
 
         topfile = sim_dir / "system.top"
         grofile = sim_dir / "initial.gro"
-        
-        u = MDAnalysis.Universe(top, gro, topology_format="ITP")
-        d = count_residues(u)
 
-        compositions[i, "raw_composition"] = d
+        u = MDAnalysis.Universe(topfile, grofile, topology_format="ITP")
+        d = count_residues(u)
 
         total_lipids = 0
         for k in lipid_names:
@@ -189,13 +188,18 @@ for sim, composition in simulations.items():
                 total_lipids += d[k]
 
         normed_comp = {}
-        s = ""
+        discretized_composition_str = ""
+        base_composition_str = ""
         for k in lipid_names:
             if k in d:
-                s += f"{k}: {d[k]/total_lipids:0.2f}; "
+                discretized_composition_str += f"{k}: {100*d[k]/total_lipids:0.2f}; "
+                base_composition_str += f"{k}: {composition[k]:0.2f}; "
                 normed_comp[k] = d[k] / total_lipids
             else:
-                s += f"{k}: {0:0.2f}; "
+                discretized_composition_str += f"{k}: {0:0.2f}; "
+                base_composition_str += f"{k}: {composition[k]:0.2f}; "
                 normed_comp[k] = 0
-        print(s)
-        compositions[i, "normed_composition"] = normed_comp
+        print(sim_dir)
+        print(discretized_composition_str)
+        print(base_composition_str)
+        print()

@@ -18,10 +18,6 @@ lipids = ["POPC", "DOPC", "POPE", "DOPE", "CDL1", "POPG", "DOPG"]
 
 lipid_dict = dict([[j, i] for i, j in enumerate(lipids)])
 
-
-# simulations = ["1", "2", "3", "4", "5", "6", "7"]
-simulations = ["8", "9", "10", "11"]
-
 leaflets = ["upper", "lower"]
 
 
@@ -157,5 +153,5 @@ def run_neighbor_search(sim):
 #     pool.close()
 
 if __name__ == "__main__":
-    process_map(run_voronoi, simulations, max_workers=7)
-    process_map(run_neighbor_search, simulations, max_workers=7)
+    process_map(run_voronoi, util.simulations, max_workers=7)
+    process_map(run_neighbor_search, util.simulations, max_workers=7)

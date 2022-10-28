@@ -2,6 +2,9 @@ from string import Template
 from pathlib import Path
 import os
 
+
+
+### MINIMIZATION
 min_template = """
 #!/bin/bash
 FIRST=`qsub run_equilibration0.pbs`
@@ -11,6 +14,7 @@ FOURTH=`qsub -W depend=afterok:$THIRD run_equilibration3.pbs`
 FIFTH=`qsub -W depend=afterok:$FOURTH run_equilibration4.pbs`
 """
 
+### RUN 10 jobs ###
 # run_template = """
 # #!/bin/bash
 # FIRST=`qsub run_production1.pbs`
@@ -46,14 +50,41 @@ FIFTH=`qsub -W depend=afterok:$FOURTH run_equilibration4.pbs`
 #     ("production10+100", "step7.3_production.mdp"),
 # ]
 
+
+### 5 jobs
+# run_template = """
+# #!/bin/bash
+# FIRST=`qsub run_production1.pbs`
+# SECOND=`qsub -W depend=afterok:$FIRST run_production2.pbs`
+# THIRD=`qsub -W depend=afterok:$SECOND run_production3.pbs`
+# FOURTH=`qsub -W depend=afterok:$THIRD run_production4.pbs`
+# FIFTH=`qsub -W depend=afterok:$FOURTH run_production5.pbs`
+# SIXTH=`qsub -W depend=afterok:$FIFTH run_production5+100.pbs`
+# """
+
+# runs = [
+#     ("minimization1", "step6.2_equilibration.mdp"),
+#     ("equilibration0", "step6.2_equilibration.mdp"),
+#     ("equilibration1", "step6.3_equilibration.mdp"),
+#     ("equilibration2", "step6.4_equilibration.mdp"),
+#     ("equilibration3", "step6.5_equilibration.mdp"),
+#     ("equilibration4", "step6.6_equilibration.mdp"),
+#     ("production1", "step7.2_production.mdp"),
+#     ("production2", "step7.2_production.mdp"),
+#     ("production3", "step7.2_production.mdp"),
+#     ("production4", "step7.2_production.mdp"),
+#     ("production5", "step7.2_production.mdp"),
+#     ("production5+100", "step7.3_production.mdp"),
+# ]
+
+
+### 3 production
 run_template = """
 #!/bin/bash
 FIRST=`qsub run_production1.pbs`
 SECOND=`qsub -W depend=afterok:$FIRST run_production2.pbs`
 THIRD=`qsub -W depend=afterok:$SECOND run_production3.pbs`
-FOURTH=`qsub -W depend=afterok:$THIRD run_production4.pbs`
-FIFTH=`qsub -W depend=afterok:$FOURTH run_production5.pbs`
-SIXTH=`qsub -W depend=afterok:$FIFTH run_production5+100.pbs`
+FOURTH=`qsub -W depend=afterok:$THIRD run_production3+100.pbs`
 """
 
 runs = [
@@ -66,11 +97,8 @@ runs = [
     ("production1", "step7.2_production.mdp"),
     ("production2", "step7.2_production.mdp"),
     ("production3", "step7.2_production.mdp"),
-    ("production4", "step7.2_production.mdp"),
-    ("production5", "step7.2_production.mdp"),
-    ("production5+100", "step7.3_production.mdp"),
+    ("production3+100", "step7.3_production.mdp"),
 ]
-
 
 base_path = Path("/home/clee2/mito_lipidomics")
 
@@ -84,7 +112,7 @@ mdpbase = "/home/clee2/mito_lipidomics/mdps"
 
 queue_base = Path(".")
 
-for i in range(8,12):
+for i in range(1,12):
     template_file = Path("./template.pbs")
     with template_file.open("r") as fd:
         src = Template(fd.read())
@@ -93,13 +121,13 @@ for i in range(8,12):
     with min_template_file.open("r") as fd:
         min_src = Template(fd.read())
 
-    system_name = f"{i}"
+    system_name = f"{i}_small"
 
     target_folder = queue_base / system_name
 
     os.makedirs(target_folder, exist_ok=True)
 
-    initdir = sim_path / f"{i}"
+    initdir = sim_path / f"{system_name}"
 
     for i in range(1,len(runs)):
         if 'equilibration' in runs[i][0]:
