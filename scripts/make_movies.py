@@ -15,25 +15,14 @@ from tqdm import tqdm
 from tqdm.contrib.concurrent import process_map
 
 from plot_helper import *
-from util import *
+import util
 
 color_palette = sns.color_palette("colorblind")
 
-base_path = Path("/scratch/ctlee/mito_lipidomics_scratch")
-simulations = [1, 2, 3, 4, 5, 6]
-system_names = {
-    1: "+CDL; 0Sat.",
-    2: "+CDL; +Sat.",
-    3: "+CDL; ++Sat.",
-    4: "-CDL; 0Sat.",
-    5: "-CDL; +Sat.",
-    6: "-CDL; ++Sat.",
-}
-
 mc = {}
-for sys in simulations:
-    with open(base_path / f"analysis/{sys}/membrane_curvature.pickle", "rb") as handle:
-        mc[sys] = pickle.load(handle)
+for sim in util.simulations:
+    with open(util.analysis_path / sim / "membrane_curvature.pickle", "rb") as handle:
+        mc[sim] = pickle.load(handle)
 
 
 curvatures = [
@@ -62,12 +51,12 @@ cm = "PRGn"
 _s = 10  # Average block window
 
 
-def make_movie(sys):
-    print("Processing system:", sys)
-    frame_dt = mc[sys].times[1] - mc[sys].times[0]  # picoseconds
+def make_movie(sim):
+    print("Processing system:", sim)
+    frame_dt = mc[sim].times[1] - mc[sim].times[0]  # picoseconds
 
     _b = 0
-    _e = len(mc[sys].frames)
+    _e = len(mc[sim].frames)
 
     # dx = mc[sys].x_step  # Angstroms
     # dy = mc[sys].y_step  # Angstroms
@@ -78,7 +67,7 @@ def make_movie(sys):
         bin_mean_data = {}
 
         n_frames = len(range(_b, _e + 1, _s))
-        shape = mc[sys].P.shape
+        shape = mc[sim].P.shape
 
         bin_mean_data["times"] = np.arange(0, _e, _s, dtype=int) * frame_dt  # picoseconds
         for leaflet, _ in leaflets:
@@ -89,7 +78,7 @@ def make_movie(sys):
             bin_mean_data[leaflet] = np.fromiter(
                 map(
                     partial(np.mean, axis=0),
-                    np.split(mc[sys].results[curvature_type][leaflet], split_indices),
+                    np.split(mc[sim].results[curvature_type][leaflet], split_indices),
                 ),
                 dtype=np.dtype((np.double, (shape))),
             )
@@ -132,22 +121,22 @@ def make_movie(sys):
                     cbar.set_label(curvature_label, fontsize=6, labelpad=2)
 
                     fig.suptitle(
-                        f"{system_names[sys]} {bin_mean_data['times'][i]*1e-6:0.3f} μs"
+                        f"{util.system_names[sim]} {bin_mean_data['times'][i]*1e-6:0.3f} μs"
                     )
 
                 plt.tight_layout()
                 plt.savefig(
-                    Path(tmpdirname) / f"{sys}-{curvature_type}-{i}.png", format="png"
+                    Path(tmpdirname) / f"{sim}-{curvature_type}-{i}.png", format="png"
                 )
 
             clip = mpy.ImageSequenceClip(
                 [
-                    f"{tmpdirname}/{sys}-{curvature_type}-{i}.png"
+                    f"{tmpdirname}/{sim}-{curvature_type}-{i}.png"
                     for i in range(n_frames)
                 ],
                 fps=30,
             )
-            clip.write_videofile(f"Figures/{sys}_{curvature_type}.mp4", fps=30)
+            clip.write_videofile(f"Figures/{sim}_{curvature_type}.mp4", fps=30)
         del clip
 
     ## PLOT OTHER MEASURES
@@ -156,7 +145,7 @@ def make_movie(sys):
         bin_mean_data = {}
 
         n_frames = len(range(_b, _e + 1, _s))
-        shape = mc[sys].P.shape
+        shape = mc[sim].P.shape
 
         bin_mean_data["times"] = np.arange(0, _e, _s, dtype=int) * frame_dt  # picoseconds
 
@@ -165,7 +154,7 @@ def make_movie(sys):
         bin_mean_data["data"] = np.fromiter(
             map(
                 partial(np.mean, axis=0),
-                np.split(mc[sys].results[measure_type], split_indices),
+                np.split(mc[sim].results[measure_type], split_indices),
             ),
             dtype=np.dtype((np.double, (shape))),
         )
@@ -190,7 +179,7 @@ def make_movie(sys):
                 )
 
                 ax.set_aspect("equal")
-                ax.set_title(f"{system_names[sys]} {bin_mean_data['times'][i]*1e-6:0.3f} μs")
+                ax.set_title(f"{util.system_names[sim]} {bin_mean_data['times'][i]*1e-6:0.3f} μs")
                 ax.axis("off")
                 cbar = plt.colorbar(
                     im,
@@ -206,16 +195,16 @@ def make_movie(sys):
 
                 plt.tight_layout()
                 plt.savefig(
-                    Path(tmpdirname) / f"{sys}-{measure_type}-{i}.png", format="png"
+                    Path(tmpdirname) / f"{sim}-{measure_type}-{i}.png", format="png"
                 )
 
             clip = mpy.ImageSequenceClip(
-                [f"{tmpdirname}/{sys}-{measure_type}-{i}.png" for i in range(n_frames)],
+                [f"{tmpdirname}/{sim}-{measure_type}-{i}.png" for i in range(n_frames)],
                 fps=30,
             )
-            clip.write_videofile(f"Figures/{sys}_{measure_type}.mp4", fps=30)
+            clip.write_videofile(f"Figures/{sim}_{measure_type}.mp4", fps=30)
         del clip
 
 
-r = process_map(make_movie, simulations, max_workers=6)
+r = process_map(make_movie, util.simulations, max_workers=6)
     

@@ -110,7 +110,7 @@ def run_voronoi(sim):
 
 def run_neighbor_search(sim):
     gro = util.analysis_path / f"{sim}/po4_only.gro"
-    traj = [util.analysis_path / f"{sim}/po4_{i}.xtc" for i in [4, 5]]
+    traj = [util.analysis_path / f"{sim}/po4_{i}.xtc" for i in [5]]
 
     u = MDAnalysis.Universe(gro, *map(str, traj))
 
@@ -153,5 +153,5 @@ def run_neighbor_search(sim):
 #     pool.close()
 
 if __name__ == "__main__":
-    process_map(run_voronoi, util.simulations, max_workers=7)
-    process_map(run_neighbor_search, util.simulations, max_workers=7)
+    # process_map(run_voronoi, util.simulations, max_workers=7)
+    process_map(run_neighbor_search, util.simulations, max_workers=6)
