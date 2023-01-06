@@ -104,6 +104,33 @@ simulations = {
         "POPG": 0,
         "DOPG": 20,
     },
+    12: {
+        "POPC": 17,
+        "DOPC": 26,
+        "POPE": 22,
+        "DOPE": 21,
+        "CDL1": 0,
+        "POPG": 12,
+        "DOPG": 2,
+    },
+    13: {
+        "POPC": 11,
+        "DOPC": 44,
+        "POPE": 3,
+        "DOPE": 26,
+        "CDL1": 16,
+        "POPG": 0,
+        "DOPG": 0,
+    },
+    14: {
+        "POPC": 12,
+        "DOPC": 48,
+        "POPE": 3,
+        "DOPE": 28,
+        "CDL1": 9,
+        "POPG": 0,
+        "DOPG": 0,
+    },
 }
 
 
