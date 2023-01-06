@@ -37,6 +37,13 @@ import matplotlib.patches as mpatches
 # import matplotlib.pylab as mpl
 
 import seaborn as sns
+from operator import sub
+
+from mpl_toolkits import axes_grid1
+# from mpl_toolkits.axes_grid1.inset_locator import (inset_axes, InsetPosition,
+#                                                   mark_inset)
+
+
 
 print("Matplotlib Version:", mpl.__version__)
 
@@ -77,11 +84,28 @@ LinearWhiteBlueColormap = mpl.colors.LinearSegmentedColormap.from_list(
     "LinearBlues", ["white", sns.color_palette()[0]], N=256
 )
 
+# def matplotlibStyle(small: float = 6, medium: float = 8, large: float = 10):
+#     """Set matplotlib plotting style
 
-from mpl_toolkits import axes_grid1
+#     Args:
+#         s (int, optional): Small size. Defaults to 6.
+#         m (int, optional): Medium size. Defaults to 8.
+#         l (int, optional): Large size. Defaults to 10.
+#     """
+#     plt.rcParams["font.sans-serif"] = "Arial"
+#     plt.rcParams["font.family"] = "sans-serif"
+#     plt.rcParams["lines.linewidth"] = 2
+#     plt.rcParams["savefig.dpi"] = 600
+#     # mpl.rcParams.update({'font.size': 8})
+#     plt.rc("font", size=large)  # controls default text sizes
+#     plt.rc("axes", titlesize=large)  # fontsize of the axes title
+#     plt.rc("axes", labelsize=medium)  # fontsize of the x and y labels
+#     plt.rc("xtick", labelsize=medium)  # fontsize of the tick labels
+#     plt.rc("ytick", labelsize=medium)  # fontsize of the tick labels
+#     plt.rc("legend", fontsize=small, frameon=False)  # legend fontsize
+#     plt.rc("figure", titlesize=large)  # fontsize of the figure title
+#     plt.rc("pdf", fonttype=42)
 
-from mpl_toolkits.axes_grid1.inset_locator import (inset_axes, InsetPosition,
-                                                  mark_inset)
 
 def add_colorbar(im, ax=None, aspect=20, pad_fraction=0.5, **kwargs):
     """Add a vertical color bar to an image plot."""
@@ -93,9 +117,6 @@ def add_colorbar(im, ax=None, aspect=20, pad_fraction=0.5, **kwargs):
     cax = divider.append_axes("right", size=width, pad=pad)
     plt.sca(ax)
     return im.axes.figure.colorbar(im, cax=cax, **kwargs)
-
-
-from operator import sub
 
 
 def get_aspect(ax):
@@ -146,9 +167,7 @@ def plot_errorbar(means, stds, c, label):
     plt.tight_layout()
 
 
-#  to plot multiple
 def plot_multiple_errorbars(means, stds, c, label):
-
     # You can call this multiple times to make several plots on top of each other.
     #     plt.figure(figsize=(6,4))
     #     plt.rc('font', size=20)

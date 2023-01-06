@@ -41,7 +41,8 @@ system_names = {
 lipid_names = {"POPC", "DOPC", "POPE", "DOPE", "CDL1", "POPG", "DOPG"}
 
 archive_path = Path("/net/engram/ctlee/mito_lipidomics")
-scratch_path = Path("/scratch/ctlee/mito_lipidomics_scratch")
+# scratch_path = Path("/scratch/ctlee/mito_lipidomics_scratch")
+scratch_path = Path("/Users/ctlee/Downloads/mito_lipidomics")
 
 source_control_path = Path("/home/ctlee/2022-mitochondria-lipidomics-md")
 
@@ -212,9 +213,9 @@ def nd_block_average(
                 ),
                 dtype=np.dtype((np.double, (*result_shape,))),
             )
+        
         # Truncate first block which is either empty or has less than block elements
-        result[i] = func(blocked_data[1:])
-        # print(result[i].shape)
+        result[i] = func(blocked_data[1:], axis=0)
     return result.T
 
 
