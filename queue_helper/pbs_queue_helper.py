@@ -1,8 +1,7 @@
 from string import Template
 from pathlib import Path
 import os
-
-
+import re
 
 ### MINIMIZATION
 min_template = """
@@ -51,54 +50,60 @@ FIFTH=`qsub -W depend=afterok:$FOURTH run_equilibration4.pbs`
 # ]
 
 
-### 5 jobs
-# run_template = """
-# #!/bin/bash
-# FIRST=`qsub run_production1.pbs`
-# SECOND=`qsub -W depend=afterok:$FIRST run_production2.pbs`
-# THIRD=`qsub -W depend=afterok:$SECOND run_production3.pbs`
-# FOURTH=`qsub -W depend=afterok:$THIRD run_production4.pbs`
-# FIFTH=`qsub -W depend=afterok:$FOURTH run_production5.pbs`
-# SIXTH=`qsub -W depend=afterok:$FIFTH run_production5+100.pbs`
-# """
-
-# runs = [
-#     ("minimization1", "step6.2_equilibration.mdp"),
-#     ("equilibration0", "step6.2_equilibration.mdp"),
-#     ("equilibration1", "step6.3_equilibration.mdp"),
-#     ("equilibration2", "step6.4_equilibration.mdp"),
-#     ("equilibration3", "step6.5_equilibration.mdp"),
-#     ("equilibration4", "step6.6_equilibration.mdp"),
-#     ("production1", "step7.2_production.mdp"),
-#     ("production2", "step7.2_production.mdp"),
-#     ("production3", "step7.2_production.mdp"),
-#     ("production4", "step7.2_production.mdp"),
-#     ("production5", "step7.2_production.mdp"),
-#     ("production5+100", "step7.3_production.mdp"),
-# ]
-
-
-### 3 production
-run_template = """
+## 5 jobs
+run_5_template = """
 #!/bin/bash
-FIRST=`qsub run_production1.pbs`
-SECOND=`qsub -W depend=afterok:$FIRST run_production2.pbs`
-THIRD=`qsub -W depend=afterok:$SECOND run_production3.pbs`
-FOURTH=`qsub -W depend=afterok:$THIRD run_production3+100.pbs`
+FIRST=`qsub run_production0.pbs`
+SECOND=`qsub -W depend=afterok:$FIRST run_production1.pbs`
+THIRD=`qsub -W depend=afterok:$SECOND run_production2.pbs`
+FOURTH=`qsub -W depend=afterok:$THIRD run_production3.pbs`
+FIFTH=`qsub -W depend=afterok:$FOURTH run_production4.pbs`
 """
 
-runs = [
-    ("minimization1", "step6.2_equilibration.mdp"),
+runs_5 = [
+    ("minimization1", ""),
     ("equilibration0", "step6.2_equilibration.mdp"),
     ("equilibration1", "step6.3_equilibration.mdp"),
     ("equilibration2", "step6.4_equilibration.mdp"),
     ("equilibration3", "step6.5_equilibration.mdp"),
     ("equilibration4", "step6.6_equilibration.mdp"),
-    ("production1", "step7.2_production.mdp"),
-    ("production2", "step7.2_production.mdp"),
-    ("production3", "step7.2_production.mdp"),
-    ("production3+100", "step7.3_production.mdp"),
+    ("production0", "step7.2_production.mdp"),
+    ("production1", ""),
+    ("production2", ""),
+    ("production3", ""),
+    ("production4", ""),
 ]
+
+
+### 3 production
+run_3_template = """
+#!/bin/bash
+FIRST=`qsub run_production0.pbs`
+SECOND=`qsub -W depend=afterok:$FIRST run_production1.pbs`
+THIRD=`qsub -W depend=afterok:$SECOND run_production2.pbs`
+FOURTH=`qsub -W depend=afterok:$SECOND run_production3.pbs`
+FIFTH=`qsub -W depend=afterok:$THIRD run_production+100.pbs`
+"""
+
+runs_3 = [
+    ("minimization1", ""),
+    ("equilibration0", "step6.2_equilibration.mdp"),
+    ("equilibration1", "step6.3_equilibration.mdp"),
+    ("equilibration2", "step6.4_equilibration.mdp"),
+    ("equilibration3", "step6.5_equilibration.mdp"),
+    ("equilibration4", "step6.6_equilibration.mdp"),
+    ("production0", "step7.2_production.mdp"),
+    ("production1", ""),
+    ("production2", ""),
+    ("production3", ""),
+    ("production+100", "step7.3_production.mdp"),
+]
+
+JOB_PATTERN = r"""
+        (?P<runtype>[a-zA-Z]+)
+        (?P<special>\+?)
+        (?P<runno>[0-9]+)
+    """
 
 base_path = Path("/home/clee2/mito_lipidomics")
 
@@ -108,100 +113,98 @@ mdp_path = base_path / "mdps"
 script_path = base_path / "scripts"
 
 gmxbin = "/home/clee2/gromacs2022/bin/gmx"
-mdpbase = "/home/clee2/mito_lipidomics/mdps"
+mdpbase = "/home/clee2/mito_lipidomics/mdps_continuation"
 
 queue_base = Path(".")
 
-for i in range(1,12):
-    template_file = Path("./template.pbs")
-    with template_file.open("r") as fd:
-        src = Template(fd.read())
+_regex = re.compile(r"^\s*" + JOB_PATTERN + r"\s*$", re.VERBOSE)
 
-    min_template_file = Path("./min_template.pbs")
-    with min_template_file.open("r") as fd:
-        min_src = Template(fd.read())
+extend_time = 1000000  # picoseconds = 1 us
 
-    system_name = f"{i}_small"
+with Path("./prod_template.pbs").open("r") as fd:
+    prod_src = Template(fd.read())
 
-    target_folder = queue_base / system_name
+with Path("./min_template.pbs").open("r") as fd:
+    min_src = Template(fd.read())
 
-    os.makedirs(target_folder, exist_ok=True)
+with Path("./equil_template.pbs").open("r") as fd:
+    equil_src = Template(fd.read())
 
-    initdir = sim_path / f"{system_name}"
+with Path("./equil_start_template.pbs").open("r") as fd:
+    equil_start_src = Template(fd.read())
 
-    for i in range(1,len(runs)):
-        if 'equilibration' in runs[i][0]:
-            _src = min_src
+with Path("./extend_template.pbs").open("r") as fd:
+    extend_src = Template(fd.read())
+
+for system_no in range(1, 25):
+    for sys_size in ["", "small"]:
+        if sys_size == "small":
+            runs = runs_3
+            run_template = run_3_template
+            system_name = f"{system_no}_small"
         else:
-            _src = src
-        d = {
-            "SYSTEM_NAME": f"{system_name}_{runs[i][0]}",
-            "GMXBIN": gmxbin,
-            "INITDIR": initdir,
-            "MDP_BASE": mdpbase,
-            "MDPFILE" : runs[i][1],
-            "PREV_RUN": runs[i-1][0],
-            "CURR_RUN": runs[i][0],
-        }
+            runs = runs_5
+            run_template = run_5_template
+            system_name = f"{system_no}"
+        print(system_name)
 
-        result = _src.substitute(d)
+        target_folder = queue_base / system_name
 
-        with open(
-            target_folder
-            / f"run_{runs[i][0]}.pbs",
-            "w",
-        ) as fd:
-            fd.write(result)
+        os.makedirs(target_folder, exist_ok=True)
 
-    with open(target_folder / "queue_all.sh", 'w') as fd:
-        fd.write(run_template)
+        initdir = sim_path / f"{system_name}"
 
-    with open(target_folder / "queue_minimization.sh", 'w') as fd:
-        fd.write(min_template)
+        for i in range(1, len(runs)):
+            match = _regex.match(runs[i][0]).groupdict()
+
+            d = {
+                "SYSTEM_NAME": f"{system_name}_{runs[i][0]}",
+                "GMXBIN": gmxbin,
+                "INITDIR": initdir,
+                "MDP_BASE": mdpbase,
+                "PREV_RUN": _regex.match(runs[i - 1][0]).group("runtype"),
+            }
+
+            if "equilibration" in match["runtype"]:
+                d["CURR_RUN"] = "equilibration"
+                d["MDPFILE"] = runs[i][1]
+                if int(match["runno"]) == 0:
+                    _src = equil_start_src
+                else:
+                    _src = equil_src
+                    d["CHECKPOINT"] = "equilibration"
+            elif "minimization" in match["runtype"]:
+                _src = min_src
+                d["CURR_RUN"] = runs[i][0]
+                d["MDPFILE"] = runs[i][1]
+            elif "production" in match["runtype"]:
+                d["CURR_RUN"] = "production"
+                if int(match["runno"]) == 0:
+                    _src = prod_src
+                    d["CHECKPOINT"] = "equilibration"
+                    d["MDPFILE"] = runs[i][1]
+                elif match["special"]:
+                    _src = prod_src
+                    d["CHECKPOINT"] = "production"
+                    d["MDPFILE"] = runs[i][1]
+                    d["CURR_RUN"] = "production+100"
+                else:
+                    _src = extend_src
+                    d["CHECKPOINT"] = "production"
+                    d["EXTEND_TIME"] = extend_time
 
 
-# template_file = Path("./template.pbs")
-# with template_file.open("r") as fd:
-#     src = Template(fd.read())
+            # print(i, d)
+            result = _src.substitute(d)
 
-# min_template_file = Path("./min_template.pbs")
-# with min_template_file.open("r") as fd:
-#     min_src = Template(fd.read())
+            with open(
+                target_folder / f"run_{runs[i][0]}.pbs",
+                "w",
+            ) as fd:
+                fd.write(result)
 
-# system_name = f"0enth_na"
+        with open(target_folder / "queue_all.sh", "w") as fd:
+            fd.write(run_template)
 
-# target_folder = queue_base / system_name
-
-# os.makedirs(target_folder, exist_ok=True)
-
-# initdir = sim_path / f"{system_name}"
-
-# for i in range(1,len(runs)):
-#     if 'equilibration' in runs[i][0]:
-#         _src = min_src
-#     else:
-#         _src = src
-#     d = {
-#         "SYSTEM_NAME": f"{system_name}_{runs[i][0]}",
-#         "GMXBIN": gmxbin,
-#         "INITDIR": initdir,
-#         "MDP_BASE": mdpbase,
-#         "MDPFILE" : runs[i][1],
-#         "PREV_RUN": runs[i-1][0],
-#         "CURR_RUN": runs[i][0],
-#     }
-
-#     result = _src.substitute(d)
-#     print(f"run_{runs[i][0]}")
-#     with open(
-#         target_folder
-#         / f"run_{runs[i][0]}.pbs",
-#         "w",
-#     ) as fd:
-#         fd.write(result)
-
-# with open(target_folder / "queue_all.sh", 'w') as fd:
-#     fd.write(run_template)
-
-# with open(target_folder / "queue_minimization.sh", 'w') as fd:
-#     fd.write(min_template)
+        with open(target_folder / "queue_minimization.sh", "w") as fd:
+            fd.write(min_template)

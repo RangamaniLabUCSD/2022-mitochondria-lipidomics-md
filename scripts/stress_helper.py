@@ -22,11 +22,11 @@ def _stage(sim):
         sim (str): Simulation directory
     """
     print(sim)
-    sim_dir = util.scratch_sim_path / sim
+    sim_dir = util.sim_path / sim
     if not sim_dir.exists():
         raise RuntimeError(f"{sim_dir} is missing")
 
-    ref_configuration = sim_dir / "production3+100.gro"
+    ref_configuration = sim_dir / "production+100.gro"
     if not ref_configuration.exists():
         return
 
@@ -71,7 +71,7 @@ def _stage(sim):
     membrane_index = int(p.stdout)
 
     #### RUN TRAJCONV
-    original_traj = sim_dir / "production3+100.trr"
+    original_traj = sim_dir / "production+100.trr"
     (staging_dir / "frames").mkdir(parents=True, exist_ok=True)
 
     trjconv_cmd = f"echo '{membrane_index} {system_index}' | {util.gmxls_bin} trjconv -f {original_traj} -o {staging_dir}/frames/frame.trr -n {ndx} -center -split 5 -s ./stress_calc/stress.tpr"
@@ -128,35 +128,35 @@ def calculate_stresses(sims):
     process_map(_compute_stress, jobs, max_workers=24, chunksize=100)
 
 
-# def _z_profile_worker(args):
-#     stresscalc_dir, i = args
-#     os.chdir(stresscalc_dir)
+def _z_profile_worker(args):
+    stresscalc_dir, i = args
+    os.chdir(stresscalc_dir)
 
-#     tensortools_cmd = f"python {util.script_path}/tensortools.py --prof z -f frames/frame{i}.dat0 -o frames_z/frame_z_{i}.dat0"
-#     p = subprocess.run(tensortools_cmd, shell=True)
-#     if p.returncode != 0:
-#         print(p.stderr, stresscalc_dir, i)
+    tensortools_cmd = f"python {util.script_path}/tensortools.py --prof z -f frames/frame{i}.dat0 -o frames_z/frame_z_{i}.dat0"
+    p = subprocess.run(tensortools_cmd, shell=True)
+    if p.returncode != 0:
+        print(p.stderr, stresscalc_dir, i)
 
 
-# def generate_z_profiles(sims):
-#     print("Integrating to obtain z-profiles per frame...")
-#     jobs = []
-#     # Iterate over simulations to process
-#     for sim in sims:
-#         print(f"\tScheduling jobs for {sim}...")
-#         stresscalc_dir = util.analysis_path / sim / "stress_calc"
-#         frames_z_dir = stresscalc_dir / "frames_z"
-#         frames_z_dir.mkdir(exist_ok=True)
+def generate_z_profiles(sims):
+    print("Integrating to obtain z-profiles per frame...")
+    jobs = []
+    # Iterate over simulations to process
+    for sim in sims:
+        print(f"\tScheduling jobs for {sim}...")
+        stresscalc_dir = util.analysis_path / sim / "stress_calc"
+        frames_z_dir = stresscalc_dir / "frames_z"
+        frames_z_dir.mkdir(exist_ok=True)
 
-#         # TODO: change this to not be a hardcoded number
-#         for i in range(0, 20001):
-#             frame_stress = stresscalc_dir / f"frames/frame{i}.dat0"
-#             if not frame_stress.exists():
-#                 print(f"{frame_stress} is missing")
-#                 continue
-#             if not (frames_z_dir / f"frame_z_{i}.dat0").exists():
-#                 jobs.append((stresscalc_dir, i))
-#     process_map(_z_profile_worker, jobs, max_workers=24, chunksize=100)
+        # TODO: change this to not be a hardcoded number
+        for i in range(0, 20001):
+            frame_stress = stresscalc_dir / f"frames/frame{i}.dat0"
+            if not frame_stress.exists():
+                print(f"{frame_stress} is missing")
+                continue
+            if not (frames_z_dir / f"frame_z_{i}.dat0").exists():
+                jobs.append((stresscalc_dir, i))
+    process_map(_z_profile_worker, jobs, max_workers=24, chunksize=100)
 
 
 def _average_z_worker(stresscalc_dir):

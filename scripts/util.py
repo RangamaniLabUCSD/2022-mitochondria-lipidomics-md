@@ -16,40 +16,342 @@ from scipy import stats
 from functools import partial
 
 
-simulations = ["1", "2", "3", "4", "5", "6", "7", "8", "9", "10", "11"]
+simulations = [
+    "1",
+    "2",
+    "3",
+    "4",
+    "5",
+    "6",
+    "7",
+    "8",
+    "9",
+    "10",
+    "11",
+    "12",
+    "13",
+    "14",
+    "15",
+    "16",
+    "17",
+    "18",
+    "19",
+    "20",
+    "21",
+    "22",
+    "23",
+    "24",
+]
 
-non_cdl_simulations = ["4", "5", "6", "10", "11"]
+non_cdl_simulations = [
+    "4",
+    "5",
+    "6",
+    "10",
+    "11",
+]
 sizes = ["large", "small"]
 
-membrane_sel = "resname POPC DOPC POPE DOPE CDL1 POPG DOPG"
+membrane_sel = "resname POPC DOPC POPE DOPE CDL1 CDL2 POPG DOPG"
 po4_sel = "name PO4 PO41 PO42 GL0"
 
 system_names = {
-    "1": "+CDL; 0Sat.",
-    "2": "+CDL; +Sat.",
-    "3": "+CDL; ++Sat.",
-    "4": "-CDL; 0Sat.",
-    "5": "-CDL; +Sat.",
-    "6": "-CDL; ++Sat.",
-    "7": "CDL Only",
-    "8": "PO; CDL",
-    "9": "DO; CDL",
+    "1": "+CL1; 0S",
+    "2": "+CL1; +S",
+    "3": "+CL1; ++S",
+    "4": "-CL1; 0S",
+    "5": "-CL1; +S",
+    "6": "-CL1; ++S",
+    "7": "CL1 Only",
+    "8": "PO; CL1",
+    "9": "DO; CL1",
     "10": "PO; PG",
     "11": "DO; PG",
+    "12": "SFA3 (dcrd1) NEW",
+    "13": "Itay O CL1",
+    "14": "Itay I CL2",
+    "15": "SFA3 CL1 NEW",
+    "16": "+CL2; 0S",
+    "17": "+CL2; +S",
+    "18": "+CL2; ++S",
+    "19": "CL2 Only",
+    "20": "PO; CL2",
+    "21": "DO; CL2",
+    "22": "Itay O CL2",
+    "23": "Itay I CL2",
+    "24": "SFA3 CL2 NEW",
 }
 
-lipid_names = {"POPC", "DOPC", "POPE", "DOPE", "CDL1", "POPG", "DOPG"}
+system_compositions = {
+    1: {
+        "POPC": 12,
+        "DOPC": 46,
+        "POPE": 3,
+        "DOPE": 27,
+        "CDL1": 12,
+        "CDL2": 0,
+        "POPG": 0,
+        "DOPG": 0,
+    },
+    2: {
+        "POPC": 26,
+        "DOPC": 25,
+        "POPE": 8,
+        "DOPE": 29,
+        "CDL1": 12,
+        "CDL2": 0,
+        "POPG": 0,
+        "DOPG": 0,
+    },
+    3: {
+        "POPC": 34,
+        "DOPC": 22,
+        "POPE": 14,
+        "DOPE": 18,
+        "CDL1": 12,
+        "CDL2": 0,
+        "POPG": 0,
+        "DOPG": 0,
+    },
+    4: {
+        "POPC": 10,
+        "DOPC": 55,
+        "POPE": 2,
+        "DOPE": 22,
+        "CDL1": 0,
+        "CDL2": 0,
+        "POPG": 6,
+        "DOPG": 5,
+    },
+    5: {
+        "POPC": 20,
+        "DOPC": 34,
+        "POPE": 7,
+        "DOPE": 25,
+        "CDL1": 0,
+        "CDL2": 0,
+        "POPG": 12,
+        "DOPG": 2,
+    },
+    6: {
+        "POPC": 34,
+        "DOPC": 20,
+        "POPE": 14,
+        "DOPE": 18,
+        "CDL1": 0,
+        "CDL2": 0,
+        "POPG": 12,
+        "DOPG": 2,
+    },
+    7: {
+        "POPC": 0,
+        "DOPC": 0,
+        "POPE": 0,
+        "DOPE": 0,
+        "CDL1": 100,
+        "CDL2": 0,
+        "POPG": 0,
+        "DOPG": 0,
+    },
+    8: {
+        "POPC": 50,
+        "DOPC": 0,
+        "POPE": 30,
+        "DOPE": 0,
+        "CDL1": 20,
+        "CDL2": 0,
+        "POPG": 0,
+        "DOPG": 0,
+    },
+    9: {
+        "POPC": 0,
+        "DOPC": 50,
+        "POPE": 0,
+        "DOPE": 30,
+        "CDL1": 20,
+        "CDL2": 0,
+        "POPG": 0,
+        "DOPG": 0,
+    },
+    10: {
+        "POPC": 50,
+        "DOPC": 0,
+        "POPE": 30,
+        "DOPE": 0,
+        "CDL1": 0,
+        "CDL2": 0,
+        "POPG": 0,
+        "DOPG": 20,
+    },
+    11: {
+        "POPC": 0,
+        "DOPC": 50,
+        "POPE": 0,
+        "DOPE": 30,
+        "CDL1": 0,
+        "CDL2": 0,
+        "POPG": 0,
+        "DOPG": 20,
+    },
+    # SFA3(dcrd1) NEW
+    12: {
+        "POPC": 17,
+        "DOPC": 26,
+        "POPE": 22,
+        "DOPE": 21,
+        "CDL1": 0,
+        "CDL2": 0,
+        "POPG": 12,
+        "DOPG": 2,
+    },
+    # ITAY OUTER LEAFLET
+    13: {
+        "POPC": 11,
+        "DOPC": 44,
+        "POPE": 3,
+        "DOPE": 26,
+        "CDL1": 16,
+        "CDL2": 0,
+        "POPG": 0,
+        "DOPG": 0,
+    },
+    # ITAY INNER LEAFLET
+    14: {
+        "POPC": 12,
+        "DOPC": 48,
+        "POPE": 3,
+        "DOPE": 28,
+        "CDL1": 9,
+        "CDL2": 0,
+        "POPG": 0,
+        "DOPG": 0,
+    },
+    # SFA3 (+CL) NEW
+    15: {
+        "POPC": 18,
+        "DOPC": 26,
+        "POPE": 22,
+        "DOPE": 22,
+        "CDL1": 12,
+        "CDL2": 0,
+        "POPG": 0,
+        "DOPG": 0,
+    },
+    ### NEW CL-2 systems
+    16: {
+        "POPC": 12,
+        "DOPC": 46,
+        "POPE": 3,
+        "DOPE": 27,
+        "CDL1": 0,
+        "CDL2": 12,
+        "POPG": 0,
+        "DOPG": 0,
+    },
+    17: {
+        "POPC": 26,
+        "DOPC": 25,
+        "POPE": 8,
+        "DOPE": 29,
+        "CDL1": 0,
+        "CDL2": 12,
+        "POPG": 0,
+        "DOPG": 0,
+    },
+    18: {
+        "POPC": 34,
+        "DOPC": 22,
+        "POPE": 14,
+        "DOPE": 18,
+        "CDL1": 0,
+        "CDL2": 12,
+        "POPG": 0,
+        "DOPG": 0,
+    },
+    19: {
+        "POPC": 0,
+        "DOPC": 0,
+        "POPE": 0,
+        "DOPE": 0,
+        "CDL1": 0,
+        "CDL2": 100,
+        "POPG": 0,
+        "DOPG": 0,
+    },
+    20: {
+        "POPC": 50,
+        "DOPC": 0,
+        "POPE": 30,
+        "DOPE": 0,
+        "CDL1": 0,
+        "CDL2": 20,
+        "POPG": 0,
+        "DOPG": 0,
+    },
+    21: {
+        "POPC": 0,
+        "DOPC": 50,
+        "POPE": 0,
+        "DOPE": 30,
+        "CDL1": 0,
+        "CDL2": 20,
+        "POPG": 0,
+        "DOPG": 0,
+    },
+    # ITAY OUTER LEAFLET
+    22: {
+        "POPC": 11,
+        "DOPC": 44,
+        "POPE": 3,
+        "DOPE": 26,
+        "CDL1": 0,
+        "CDL2": 16,
+        "POPG": 0,
+        "DOPG": 0,
+    },
+    # ITAY INNER LEAFLET
+    23: {
+        "POPC": 12,
+        "DOPC": 48,
+        "POPE": 3,
+        "DOPE": 28,
+        "CDL1": 0,
+        "CDL2": 9,
+        "POPG": 0,
+        "DOPG": 0,
+    },
+    # SFA3 (+CL) NEW
+    24: {
+        "POPC": 18,
+        "DOPC": 26,
+        "POPE": 22,
+        "DOPE": 22,
+        "CDL1": 0,
+        "CDL2": 12,
+        "POPG": 0,
+        "DOPG": 0,
+    },
+}
+
+production_files = [
+    "production.trr",
+    "production.part0002.trr",
+    "production.part0003.trr",
+    "production.part0004.trr",
+    "production.part0005.trr",
+]
+
+lipid_names = {"POPC", "DOPC", "POPE", "DOPE", "CDL1", "CDL2" "POPG", "DOPG"}
 
 archive_path = Path("/net/engram/ctlee/mito_lipidomics")
-# scratch_path = Path("/scratch/ctlee/mito_lipidomics_scratch")
-scratch_path = Path("/Users/ctlee/Downloads/mito_lipidomics")
+scratch_path = Path("/u2/ctlee/mito_lipidomics_scratch")
 
 source_control_path = Path("/home/ctlee/2022-mitochondria-lipidomics-md")
 
-sim_path = archive_path / "sims"
-scratch_sim_path = scratch_path / "sims"
+sim_path = scratch_path / "sims"
+# scratch_sim_path = scratch_path / "sims"
 
-mdp_path = source_control_path / "mdps"
+mdp_path = source_control_path / "mdps_continuation"
 script_path = source_control_path / "scripts"
 
 analysis_path = scratch_path / "analysis"
@@ -65,10 +367,17 @@ gmxls_bin = Path(
 def count_residues(u):
     count_dict = {}
     for residue in u.residues:
-        if residue.resname not in count_dict:
-            count_dict[residue.resname] = 1
+        if residue.resname == "ION":
+            name = residue.atoms[0].name
+            if name not in count_dict:
+                count_dict[name] = 1
+            else: 
+                count_dict[name] += 1 
         else:
-            count_dict[residue.resname] += 1
+            if residue.resname not in count_dict:
+                count_dict[residue.resname] = 1
+            else:
+                count_dict[residue.resname] += 1
     return count_dict
 
 
@@ -213,16 +522,15 @@ def nd_block_average(
                 ),
                 dtype=np.dtype((np.double, (*result_shape,))),
             )
-        
+
         # Truncate first block which is either empty or has less than block elements
         result[i] = func(blocked_data[1:], axis=0)
     return result.T
 
 
-
 def parametric_bootstrap(
-    rvs : List[Callable],
-    n_samples : int = 9999,
+    rvs: List[Callable],
+    n_samples: int = 9999,
 ) -> npt.ArrayLike:
     """Resample data given a set of distributions
 
@@ -234,7 +542,7 @@ def parametric_bootstrap(
         npt.ArrayLike: Array of results
     """
     res = np.empty((len(rvs), n_samples))
-    
+
     for i, rv in enumerate(rvs):
         res[i] = rv(size=n_samples)
 
