@@ -24,13 +24,11 @@ def _strip_trajectory(sim: str) -> None:
 
     os.chdir(staging_dir)
 
-    trjconv_cmd = f"echo '0' | {util.gmxls_bin} trjconv -f {source_dir}/production5+100.gro -o membrane_only.gro -n po4_membrane.ndx -s analysis.tpr"
+    trjconv_cmd = f"echo '0' | {util.gmxls_bin} trjconv -f {source_dir}/production.gro -o membrane_only.gro -n po4_membrane.ndx -s analysis.tpr"
     subprocess.run(trjconv_cmd, shell=True, check=True)
 
-    for i in range(1, 6):
-        trjconv_cmd = f"echo '0 0' | {util.gmxls_bin} trjconv -f {source_dir}/production{i}.trr -center -o mem_only_{i}.xtc -n {staging_dir}/po4_membrane.ndx -s {staging_dir}/analysis.tpr -pbc whole"
-        # print(trjconv_cmd)
-        subprocess.run(trjconv_cmd, shell=True, check=True)
+    trjconv_cmd = f"echo '0 0' | {util.gmxls_bin} trjconv -f {source_dir}/production_all.trr -center -o mem_only_all.xtc -n {staging_dir}/po4_membrane.ndx -s {staging_dir}/analysis.tpr -pbc whole"
+    subprocess.run(trjconv_cmd, shell=True, check=True)
 
 
 # Generate index files and process trajectories in parallel
@@ -42,7 +40,7 @@ for sim in tqdm(util.simulations, desc=f"Generating ndx and analysis.tpr"):
 
     u = MDAnalysis.Universe(
         f"{source_dir}/system.top",
-        f"{source_dir}/production5+100.gro",
+        f"{source_dir}/production.gro",
         topology_format="ITP",
     )
     membrane = u.atoms.select_atoms(util.membrane_sel)
@@ -55,7 +53,7 @@ for sim in tqdm(util.simulations, desc=f"Generating ndx and analysis.tpr"):
         ndx.write(po4, name="po4")
 
     # Generate analysis.tpr
-    cmd = f"{util.gmxls_bin} grompp -p {source_dir}/system.top -f {util.mdp_path}/step7.2_production.mdp -n {source_dir}/index.ndx -maxwarn 10 -c {source_dir}/equilibration4.gro -o {staging_dir}/analysis.tpr"
+    cmd = f"{util.gmxls_bin} grompp -p {source_dir}/system.top -f {util.mdp_path}/step7.2_production.mdp -n {source_dir}/index.ndx -maxwarn 10 -c {source_dir}/production.gro -o {staging_dir}/analysis.tpr"
     subprocess.run(cmd, shell=True, check=True)
 
     mdout_mdp = Path.cwd() / "mdout.mdp"

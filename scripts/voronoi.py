@@ -14,11 +14,13 @@ import util
 
 # tqdm.__init__ = partialmethod(tqdm.__init__, disable=True)
 
-lipids = ["POPC", "DOPC", "POPE", "DOPE", "CDL1", "POPG", "DOPG"]
+# lipids = ["POPC", "DOPC", "POPE", "DOPE", "CDL1", "POPG", "DOPG"]
 
-lipid_dict = dict([[j, i] for i, j in enumerate(lipids)])
+lipid_dict = dict([[j, i] for i, j in enumerate(util.lipid_names)])
 
 leaflets = ["upper", "lower"]
+
+po4_neighbor_sel = "name PO4 or name GL0"
 
 
 def largest_groups(atoms):
@@ -78,11 +80,11 @@ def determine_leaflets(universe, selection="all"):
 
 def run_voronoi(sim):
     gro = util.analysis_path / f"{sim}/po4_only.gro"
-    traj = [util.analysis_path / f"{sim}/po4_{i}.xtc" for i in [4, 5]]
+    traj = util.analysis_path / f"{sim}/po4_all.xtc" 
 
-    u = MDAnalysis.Universe(gro, *map(str, traj))
+    u = MDAnalysis.Universe(gro, str(traj))
 
-    ag = determine_leaflets(u, "name PO4 or name GL0")
+    ag = determine_leaflets(u, po4_neighbor_sel)
 
     count_dict = {
         "upper": np.zeros((len(u.trajectory), 7, 7)),
@@ -110,11 +112,11 @@ def run_voronoi(sim):
 
 def run_neighbor_search(sim):
     gro = util.analysis_path / f"{sim}/po4_only.gro"
-    traj = [util.analysis_path / f"{sim}/po4_{i}.xtc" for i in [5]]
+    traj = util.analysis_path / f"{sim}/po4_all.xtc"
 
-    u = MDAnalysis.Universe(gro, *map(str, traj))
+    u = MDAnalysis.Universe(gro, str(traj))
 
-    ag = determine_leaflets(u, "name PO4 or name GL0")
+    ag = determine_leaflets(u, po4_neighbor_sel)
 
     # print(len(u.trajectory))
     count_dict = {
@@ -153,5 +155,5 @@ def run_neighbor_search(sim):
 #     pool.close()
 
 if __name__ == "__main__":
-    # process_map(run_voronoi, util.simulations, max_workers=7)
     process_map(run_neighbor_search, util.simulations, max_workers=6)
+    process_map(run_voronoi, util.simulations, max_workers=6)
