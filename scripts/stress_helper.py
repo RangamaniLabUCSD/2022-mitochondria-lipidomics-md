@@ -71,7 +71,7 @@ def _stage(sim):
     membrane_index = int(p.stdout)
 
     #### RUN TRAJCONV
-    original_traj = sim_dir / "production+100.trr"
+    original_traj = sim_dir / "production_all.trr"
     (staging_dir / "frames").mkdir(parents=True, exist_ok=True)
 
     trjconv_cmd = f"echo '{membrane_index} {system_index}' | {util.gmxls_bin} trjconv -f {original_traj} -o {staging_dir}/frames/frame.trr -n {ndx} -center -split 5 -s ./stress_calc/stress.tpr"
@@ -116,14 +116,14 @@ def calculate_stresses(sims):
         assert tpr.exists()
 
         # TODO: change this to not be a hardcoded number
-        for i in range(0, 20001):
+        for i in range(0, 40001):
             frame = staging_dir / f"frames/frame{i}.trr"
             if not frame.exists():
                 print(f"Missing frame: {frame}")
                 continue
             frame_stress = stresscalc_dir / f"frames/frame{i}.dat"
-            if (stresscalc_dir / f"frames/frame{i}.dat0").exists():
-                continue
+            # if (stresscalc_dir / f"frames/frame{i}.dat0").exists():
+            #     continue
             jobs.append((tpr, frame, frame_stress, staging_dir))
     process_map(_compute_stress, jobs, max_workers=24, chunksize=100)
 
@@ -149,13 +149,13 @@ def generate_z_profiles(sims):
         frames_z_dir.mkdir(exist_ok=True)
 
         # TODO: change this to not be a hardcoded number
-        for i in range(0, 20001):
+        for i in range(0, 40001):
             frame_stress = stresscalc_dir / f"frames/frame{i}.dat0"
             if not frame_stress.exists():
                 print(f"{frame_stress} is missing")
                 continue
             if not (frames_z_dir / f"frame_z_{i}.dat0").exists():
-                jobs.append((stresscalc_dir, i))
+               jobs.append((stresscalc_dir, i))
     process_map(_z_profile_worker, jobs, max_workers=24, chunksize=100)
 
 
@@ -202,7 +202,7 @@ def average_z_profiles(sims):
             print(f"\t\t Missing frames dir at {stresscalc_dir}")
             continue
         else:
-            for i in range(0, 20001):
+            for i in range(0, 40001):
                 if not (stresscalc_dir / f"frames/frame{i}.dat0").exists():
                     print(
                         f"\t\t{stresscalc_dir / f'frames/frame{i}.dat0'} is missing..."
