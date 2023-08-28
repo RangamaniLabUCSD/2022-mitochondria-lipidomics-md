@@ -16,71 +16,66 @@ from scipy import stats
 from functools import partial
 
 
-simulations = [
-    "1",
-    "2",
-    "3",
-    "4",
-    "5",
-    "6",
-    "7",
-    "8",
-    "9",
-    "10",
-    "11",
-    "12",
-    "13",
-    "14",
-    "15",
-    "16",
-    "17",
-    "18",
-    "19",
-    "20",
-    "21",
-    "22",
-    "23",
-    "24",
-]
+simulations = [1,2,3,4,5,6,7,8,9,10,11,12,13,14,15,16,17,18,19,20,21,22,23,24]
 
-non_cdl_simulations = [
-    "4",
-    "5",
-    "6",
-    "10",
-    "11",
-]
+# non_cdl_simulations = [4, 5, 6, 10, 11]
 sizes = ["large", "small"]
 
 membrane_sel = "resname POPC DOPC POPE DOPE CDL1 CDL2 POPG DOPG"
 po4_sel = "name PO4 PO41 PO42 GL0"
 
 system_names = {
-    "1": "+CL1; 0S",
-    "2": "+CL1; +S",
-    "3": "+CL1; ++S",
-    "4": "-CL1; 0S",
-    "5": "-CL1; +S",
-    "6": "-CL1; ++S",
-    "7": "CL1 Only",
-    "8": "PO; CL1",
-    "9": "DO; CL1",
-    "10": "PO; PG",
-    "11": "DO; PG",
-    "12": "SFA3 (dcrd1) NEW",
-    "13": "Itay O CL1",
-    "14": "Itay I CL2",
-    "15": "SFA3 CL1 NEW",
-    "16": "+CL2; 0S",
-    "17": "+CL2; +S",
-    "18": "+CL2; ++S",
-    "19": "CL2 Only",
-    "20": "PO; CL2",
-    "21": "DO; CL2",
-    "22": "Itay O CL2",
-    "23": "Itay I CL2",
-    "24": "SFA3 CL2 NEW",
+    1: "+CL1; 0S",
+    2: "+CL1; +S",
+    3: "+CL1; ++S",
+    4: "-CL1; 0S",
+    5: "-CL1; +S",
+    6: "-CL1; ++S",
+    7: "CL1 Only",
+    8: "PO; CL1",
+    9: "DO; CL1",
+    10: "PO; PG",
+    11: "DO; PG",
+    12: "SFA3 (dcrd1) NEW",
+    13: "Itay O CL1",
+    14: "Itay I CL2",
+    15: "SFA3 CL1 NEW",
+    16: "+CL2; 0S",
+    17: "+CL2; +S",
+    18: "+CL2; ++S",
+    19: "CL2 Only",
+    20: "PO; CL2",
+    21: "DO; CL2",
+    22: "Itay O CL2",
+    23: "Itay I CL2",
+    24: "SFA3 CL2 NEW",
 }
+
+
+final_system_names = {
+    1: "+CL1; 0S",
+    2: "+CL1; +S",
+    3: "+CL1; ++S",
+    4: "+CL2; 0S",
+    5: "+CL2; +S",
+    6: "+CL2; ++S",
+    7: "-CL1; 0S",
+    8: "-CL1; +S",
+    9: "-CL1; ++S",
+    10: "PO; CL1",
+    11: "DO; CL1",
+    12: "PO; PG",
+    13: "DO; PG",
+    14: "PO; CL2",
+    15: "DO; CL2",
+    16: "Outer CL1",
+    17: "Inner CL2",
+    18: "Outer CL2",
+    19: "Inner CL2",
+    20: "CL1 Only",
+    21: "CL2 Only",
+}
+
 
 system_compositions = {
     1: {
@@ -333,15 +328,39 @@ system_compositions = {
     },
 }
 
-production_files = [
-    "production.trr",
-    "production.part0002.trr",
-    "production.part0003.trr",
-    "production.part0004.trr",
-    "production.part0005.trr",
+remapping_order = [
+    1,
+    2,
+    15,
+    16,
+    17,
+    24,
+    4,
+    5,
+    12,
+    9,
+    8,
+    21,
+    20,
+    11,
+    10,
+    13,
+    14,
+    22,
+    23,
+    7,
+    19,
 ]
+# Go from final order to simulation order
+remapping_dict = dict([(i, k) for i, k in enumerate(remapping_order, start=1)])
 
-lipid_names = {"POPC", "DOPC", "POPE", "DOPE", "CDL1", "CDL2" "POPG", "DOPG"}
+# Go from simulation order to final order
+sim_to_final_index = dict([(v, k) for k, v in remapping_dict.items()])
+sim_to_final_index[3] = -3
+sim_to_final_index[6] = -6
+sim_to_final_index[18] = -18
+
+lipid_names = {"POPC", "DOPC", "POPE", "DOPE", "CDL1", "CDL2", "POPG", "DOPG"}
 
 archive_path = Path("/net/engram/ctlee/mito_lipidomics")
 scratch_path = Path("/u2/ctlee/mito_lipidomics_scratch")
@@ -349,15 +368,17 @@ scratch_path = Path("/u2/ctlee/mito_lipidomics_scratch")
 source_control_path = Path("/home/ctlee/2022-mitochondria-lipidomics-md")
 
 sim_path = scratch_path / "sims"
+sim_archive_path = archive_path / "sims"
 # scratch_sim_path = scratch_path / "sims"
 
 mdp_path = source_control_path / "mdps_continuation"
 script_path = source_control_path / "scripts"
 
 analysis_path = scratch_path / "analysis"
+analysis_fast_path = Path("/scratch2/ctlee/mito_lipidomics_scratch2/analysis")
 analysis_archive_path = archive_path / "analysis"
 
-analysis_large_file_path = Path("/u1/ctlee/mito_lipidomics")
+# analysis_large_file_path = Path("/u1/ctlee/mito_lipidomics")
 
 gmxls_bin = Path(
     "/home/jessie.gan/gromacs-ls_install/gromacs-ls-2016.3/build/bin/gmx_LS"
@@ -371,8 +392,8 @@ def count_residues(u):
             name = residue.atoms[0].name
             if name not in count_dict:
                 count_dict[name] = 1
-            else: 
-                count_dict[name] += 1 
+            else:
+                count_dict[name] += 1
         else:
             if residue.resname not in count_dict:
                 count_dict[residue.resname] = 1

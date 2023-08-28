@@ -14,9 +14,9 @@ import util
 
 # tqdm.__init__ = partialmethod(tqdm.__init__, disable=True)
 
-# lipids = ["POPC", "DOPC", "POPE", "DOPE", "CDL1", "POPG", "DOPG"]
+lipids = ["POPC", "DOPC", "POPE", "DOPE", "CDL1", "CDL2", "POPG", "DOPG"]
 
-lipid_dict = dict([[j, i] for i, j in enumerate(util.lipid_names)])
+lipid_dict = dict([[j, i] for i, j in enumerate(lipids)])
 
 leaflets = ["upper", "lower"]
 
@@ -79,16 +79,16 @@ def determine_leaflets(universe, selection="all"):
 
 
 def run_voronoi(sim):
-    gro = util.analysis_path / f"{sim}/po4_only.gro"
-    traj = util.analysis_path / f"{sim}/po4_all.xtc" 
+    gro = util.analysis_fast_path / f"{sim}/po4_only.gro"
+    traj = util.analysis_fast_path / f"{sim}/po4_all.xtc" 
 
     u = MDAnalysis.Universe(gro, str(traj))
 
     ag = determine_leaflets(u, po4_neighbor_sel)
 
     count_dict = {
-        "upper": np.zeros((len(u.trajectory), 7, 7)),
-        "lower": np.zeros((len(u.trajectory), 7, 7)),
+        "upper": np.zeros((len(u.trajectory), len(lipids), len(lipids))),
+        "lower": np.zeros((len(u.trajectory), len(lipids), len(lipids))),
         "name_map": lipid_dict,
     }
 
@@ -111,8 +111,8 @@ def run_voronoi(sim):
 
 
 def run_neighbor_search(sim):
-    gro = util.analysis_path / f"{sim}/po4_only.gro"
-    traj = util.analysis_path / f"{sim}/po4_all.xtc"
+    gro = util.analysis_fast_path / f"{sim}/po4_only.gro"
+    traj = util.analysis_fast_path / f"{sim}/po4_all.xtc"
 
     u = MDAnalysis.Universe(gro, str(traj))
 
@@ -120,8 +120,8 @@ def run_neighbor_search(sim):
 
     # print(len(u.trajectory))
     count_dict = {
-        "upper": np.zeros((len(u.trajectory), 7, 7)),
-        "lower": np.zeros((len(u.trajectory), 7, 7)),
+        "upper": np.zeros((len(u.trajectory), len(lipids), len(lipids))),
+        "lower": np.zeros((len(u.trajectory), len(lipids), len(lipids))),
         "name_map": lipid_dict,
     }
 
@@ -155,5 +155,7 @@ def run_neighbor_search(sim):
 #     pool.close()
 
 if __name__ == "__main__":
-    process_map(run_neighbor_search, util.simulations, max_workers=6)
-    process_map(run_voronoi, util.simulations, max_workers=6)
+    # jobs = util.simulations
+    jobs = ["6", "24"]
+    process_map(run_neighbor_search, jobs, max_workers=6)
+    process_map(run_voronoi, jobs, max_workers=6)

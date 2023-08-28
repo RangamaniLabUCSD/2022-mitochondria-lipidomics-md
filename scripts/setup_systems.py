@@ -12,16 +12,16 @@ large_box_size = [40, 40, 25]
 small_box_size = [15, 15, 25]
 
 # Check that mol fractions add up to 100%
-for sim in util.simulations:
+for sim in util.system_compositions:
     v = 0
-    for lipid, chi in util.simulations[sim].items():
+    for lipid, chi in util.system_compositions[sim].items():
         v += chi
     if v != 100:
         raise RuntimeError(f"Molfractions for system {sim} don't add up to 100")
 
 sim_path = Path("sims_new")
 
-for sim, composition in util.simulations.items():
+for sim, composition in util.system_compositions.items():
     for size in ["large", "small"]:
         if size == "large":
             box_size = large_box_size
@@ -61,7 +61,9 @@ for sim, composition in util.simulations.items():
 
 
 # Compare the discretized composition to the target composition
-for sim, composition in util.simulations.items():
+for sim, composition in util.system_compositions.items():
+    if sim != 25:
+        continue
     for size in ["large", "small"]:
         if size == "large":
             box_size = large_box_size
