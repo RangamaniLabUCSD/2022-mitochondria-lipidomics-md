@@ -11,7 +11,7 @@ import util
 warnings.filterwarnings("ignore")
 warnings.simplefilter("ignore")
 
-step = 0.5  # nm
+step = 2  # nm
 
 
 def _calculate_spectrum(args):
@@ -35,7 +35,7 @@ def _calculate_spectrum(args):
         interpolate=True,
     ).run(verbose=True)
 
-    with open(path / "membrane_curvature.pickle", "wb") as handle:
+    with open(path / "membrane_curvature_2nm.pickle", "wb") as handle:
         pickle.dump(mc, handle, protocol=pickle.HIGHEST_PROTOCOL)
 
 
@@ -43,12 +43,13 @@ jobs = []
 
 # Iterate over simulations to process
 for sim in util.simulations:
+    # for sim in ['1_vbt']:
     # print(f"Processing: {sim}")
-    gro = util.analysis_path / sim / "po4_only.gro"
+    gro = util.analysis_path / f"{sim}/po4_only.gro"
     traj = util.analysis_path / f"{sim}/po4_all.xtc"
     # traj = [util.analysis_path / sim / f"po4_{i}.xtc" for i in range(1, 6)]
 
-    t = (gro, traj, "name PO4 GL0", util.analysis_path / sim)
+    t = (gro, traj, "name PO4 GL0", util.analysis_path / f"{sim}")
     # print(t)
     jobs.append(t)
 

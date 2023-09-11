@@ -155,7 +155,6 @@ def run_neighbor_search(sim):
 #     pool.close()
 
 if __name__ == "__main__":
-    # jobs = util.simulations
-    jobs = ["6", "24"]
+    jobs = util.simulations
     process_map(run_neighbor_search, jobs, max_workers=6)
     process_map(run_voronoi, jobs, max_workers=6)
