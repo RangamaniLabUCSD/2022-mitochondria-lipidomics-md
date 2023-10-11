@@ -97,12 +97,14 @@ runs_3 = [
     ("production2", ""),
     ("production3", ""),
     ("production+100", "step7.3_production.mdp"),
+    ("production+100+", "step7.3_production.mdp"),
 ]
 
 JOB_PATTERN = r"""
         (?P<runtype>[a-zA-Z]+)
         (?P<special>\+?)
         (?P<runno>[0-9]+)
+        (?P<specialextend>\+?)
     """
 
 base_path = Path("/home/clee2/mito_lipidomics")
@@ -120,6 +122,7 @@ queue_base = Path(".")
 _regex = re.compile(r"^\s*" + JOB_PATTERN + r"\s*$", re.VERBOSE)
 
 extend_time = 1000000  # picoseconds = 1 us
+extend_small_time = 100000 # 100 ns
 
 with Path("./prod_template.pbs").open("r") as fd:
     prod_src = Template(fd.read())
@@ -184,10 +187,16 @@ for system_no in range(1, 25):
                     d["CHECKPOINT"] = "equilibration"
                     d["MDPFILE"] = runs[i][1]
                 elif match["special"]:
-                    _src = prod_src
-                    d["CHECKPOINT"] = "production"
+                    if match["specialextend"]:
+                        _src = extend_src
+                        d["EXTEND_TIME"] = extend_small_time
+                        d["CHECKPOINT"] = "production+100"
+                    else:
+                        _src = prod_src
+                        d["CHECKPOINT"] = "production"
                     d["MDPFILE"] = runs[i][1]
                     d["CURR_RUN"] = "production+100"
+                    
                 else:
                     _src = extend_src
                     d["CHECKPOINT"] = "production"
