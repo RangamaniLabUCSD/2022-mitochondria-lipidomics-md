@@ -76,7 +76,7 @@ def radial_averaging_series(power2D, mc, min_bin=0.001, max_bin=1, bin_width=0.0
 
 mc = {}
 for sim in util.simulations:
-    with open(util.analysis_path / f"{sim}/membrane_curvature.pickle", "rb") as handle:
+    with open(util.analysis_path / f"{sim}/membrane_curvature_2nm.pickle", "rb") as handle:
         mc[sim] = pickle.load(handle) 
 
 ####################################################
@@ -97,17 +97,17 @@ for sim in util.simulations:
             for key in mc[sim].results.keys():
                 without_mdanalysis_objects[sim][key] = getattr(mc[sim],item)[key]
 
-with open("mc_noobject.pickle", "wb") as handle:
+with open("mc_noobject_2nm.pickle", "wb") as handle:
     pickle.dump(without_mdanalysis_objects, handle, protocol=pickle.HIGHEST_PROTOCOL)
 
 
-with open("mc_noobject.pickle", "rb") as handle:
+with open("mc_noobject_2nm.pickle", "rb") as handle:
     mc = pickle.load(handle)
 
 # Override and recompute even if spectra pickle exists
 spectra_compute_override = True
 
-spectra_fd = util.analysis_path / "spectra.pickle"
+spectra_fd = util.analysis_path / "spectra_2nm.pickle"
 if spectra_fd.exists() and not spectra_compute_override:
     # LOAD SPECTRA PICKLE
     with open(spectra_fd, "rb") as handle:
