@@ -92,36 +92,6 @@ po4_neighbor_sel = "name PO4 or name GL0"
 def get_midpoints(x):
     return ((x + np.roll(x, -1)) / 2)[:-1]
 
-
-def mean_curvature(Z):
-    """
-    Calculates mean curvature from Z cloud points.
-
-
-    Parameters
-    ----------
-    Z: np.ndarray.
-        Multidimensional array of shape (n,n).
-
-
-    Returns
-    -------
-    H : np.ndarray.
-        The result of gaussian curvature of Z. Returns multidimensional
-        array object with values of gaussian curvature of shape `(n, n)`.
-
-    """
-
-    Zy, Zx = np.gradient(Z)
-    Zxy, Zxx = np.gradient(Zx)
-    Zyy, _ = np.gradient(Zy)
-
-    H = (1 + Zx**2) * Zyy + (1 + Zy**2) * Zxx - 2 * Zx * Zy * Zxy
-    H = H / (2 * (1 + Zx**2 + Zy**2) ** (1.5))
-
-    return H
-
-
 def compute_correlation(sim):
     all_data = {}
     with open(
@@ -132,7 +102,7 @@ def compute_correlation(sim):
     h = mc.results["height"][1:]
     mean = np.zeros_like(h)
     for i in range(h.shape[0]):
-        mean[i] = mean_curvature(h[i]) * 10
+        mean[i] = util.mean_curvature(h[i], mc.x_step) * 10
 
     gro = util.analysis_path / f"{sim}/po4_only.gro"
     traj = util.analysis_path / f"{sim}/po4_all.xtc"
@@ -159,6 +129,7 @@ def compute_correlation(sim):
 
         hs = []  # Curvatures for specific lipid
         ahs = []  # Curvatures for all lipids
+        mhs = []  # Curvatures for all mesh points
 
         for i, ts in tqdm(enumerate(u.trajectory[1:]), total=len(u.trajectory[1:])):
             # Get x, y points of interest
@@ -175,6 +146,8 @@ def compute_correlation(sim):
             ayd = np.digitize(ay, gym)
             ahs.extend(list(mean[i][axd, ayd]))
 
+            mhs.extend(mean[i].ravel())
+
             px = lipid_lower.positions[:, 0]
             py = lipid_lower.positions[:, 1]
             # get indices of closest mesh point
@@ -188,11 +161,15 @@ def compute_correlation(sim):
             ayd = np.digitize(ay, gym)
             ahs.extend(list(-mean[i][axd, ayd]))
 
+            mhs.extend(-mean[i].ravel())
+
         hs = np.array(hs)
         ahs = np.array(ahs)
+        mhs = np.array(mhs)
 
         all_data[lipid] = hs
     all_data["all"] = ahs
+    all_data["mhs"] = mhs
 
     return (sim, all_data)
 
@@ -221,7 +198,7 @@ if __name__ == "__main__":
     # h = mc.results["height"][1:]
     # mean = np.zeros_like(h)
     # for i in range(h.shape[0]):
-    #     mean[i] = mean_curvature(h[i]) * 10
+    #     mean[i] = util.mean_curvature(h[i], mc.x_step) * 10
 
     # gro = util.analysis_path / f"{sim}/po4_only.gro"
     # traj = util.analysis_path / f"{sim}/po4_all.xtc"

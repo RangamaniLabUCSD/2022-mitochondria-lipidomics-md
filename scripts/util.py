@@ -16,7 +16,41 @@ from scipy import stats
 from functools import partial
 
 
-simulations = [1,2,3,4,5,6,7,8,9,10,11,12,13,14,15,16,17,18,19,20,21,22,23,24]
+simulations = [
+    1,
+    2,
+    3,
+    4,
+    5,
+    6,
+    7,
+    8,
+    9,
+    10,
+    11,
+    12,
+    13,
+    14,
+    15,
+    16,
+    17,
+    18,
+    19,
+    20,
+    21,
+    22,
+    23,
+    24,
+]
+
+aa_simulations = [
+    "charmm36-sys-10",
+    "charmm36-sys-11",
+    "charmm36-sys-12",
+    "charmm36-sys-13",
+    "charmm36-sys-14",
+    "charmm36-sys-15",
+]
 
 # non_cdl_simulations = [4, 5, 6, 10, 11]
 sizes = ["large", "small"]
@@ -371,7 +405,8 @@ sim_path = scratch_path / "sims"
 sim_archive_path = archive_path / "sims"
 # scratch_sim_path = scratch_path / "sims"
 
-mdp_path = source_control_path / "mdps_continuation"
+# mdp_path = source_control_path / "mdps_continuation"
+mdp_path = source_control_path / "aa_mdps_continuation"
 script_path = source_control_path / "scripts"
 
 analysis_path = scratch_path / "analysis"
@@ -568,3 +603,33 @@ def parametric_bootstrap(
         res[i] = rv(size=n_samples)
 
     return res
+
+
+def mean_curvature(Z, h):
+    """
+    Calculates mean curvature from Z cloud points.
+
+
+    Parameters
+    ----------
+    Z: np.ndarray.
+        Multidimensional array of shape (n,n).
+    h: float.
+        Regular grid separation
+
+    Returns
+    -------
+    H : np.ndarray.
+        The result of mean curvature of Z. Returns multidimensional
+        array object with values of mean curvature of shape `(n, n)`.
+
+    """
+
+    Zy, Zx = np.gradient(Z, h)
+    Zxy, Zxx = np.gradient(Zx, h)
+    Zyy, _ = np.gradient(Zy, h)
+
+    H = (1 + Zx**2) * Zyy + (1 + Zy**2) * Zxx - 2 * Zx * Zy * Zxy
+    H = H / (2 * (1 + Zx**2 + Zy**2) ** (1.5))
+
+    return H

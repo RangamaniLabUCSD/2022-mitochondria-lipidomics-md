@@ -1,0 +1,44 @@
+; 1 us of production md
+
+integrator               = md
+tinit                    = 0.0
+dt                       = 0.020
+nsteps                   = 50000000  ; 1 us
+
+nstxout                  = 25000    ; greatly decreasing writeout rate
+nstvout                  = 25000    ; 500 ps
+nstfout                  = 25000
+nstlog                   = 25000
+nstenergy                = 25000
+nstxout-compressed       = 0        ; skip writing xtc
+
+cutoff-scheme            = Verlet
+verlet-buffer-tolerance  = -1
+nstlist                  = 20
+pbc                      = xyz
+rlist                    = 1.35
+
+epsilon_r                = 15
+coulombtype              = reaction-field
+rcoulomb                 = 1.1
+vdw_type                 = cutoff
+vdw-modifier             = Potential-shift-verlet
+rvdw                     = 1.1
+
+tcoupl                   = v-rescale
+tc-grps                  = system
+nsttcouple               = 20
+tau_t                    = 1.0
+ref_t                    = 303.0
+
+; Pressure coupling:
+Pcoupl                   = Parrinello-rahman
+Pcoupltype               = semiisotropic
+nstpcouple               = 20
+tau_p                    = 12.0
+compressibility          = 3e-4 3e-4
+ref_p                    = 1.0  1.0
+
+; GENERATE VELOCITIES FOR STARTUP RUN:
+gen_vel                  = no
+refcoord_scaling         = all

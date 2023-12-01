@@ -1,0 +1,47 @@
+integrator              = md
+tinit                   = 0.0
+init_step               = 0
+simulation-part         = 0
+dt                      = 0.002     ; 2 fs
+nsteps                  = 50000000  ; 100 ns
+
+nstxout                 = 2500      ; 5 ps
+nstvout                 = 2500      
+nstfout                 = 2500
+nstlog                  = 2500
+nstenergy               = 2500
+nstxout-compressed       = 0        ; skip writing xtc
+
+nstcalcenergy           = 100
+
+cutoff-scheme           = Verlet
+nstlist                 = 20
+
+rlist                   = 1.2
+vdwtype                 = Cut-off
+vdw-modifier            = Force-switch
+rvdw_switch             = 1.0
+rvdw                    = 1.2
+
+coulombtype             = PME
+rcoulomb                = 1.2
+
+
+tcoupl                  = v-rescale
+tc_grps                 = MEMB SOLV
+tau_t                   = 1.0 1.0
+ref_t                   = 303 303
+
+pcoupl                  = Parrinello-Rahman
+pcoupltype              = semiisotropic
+tau_p                   = 5.0
+compressibility         = 4.5e-5  4.5e-5
+ref_p                   = 1.0     1.0
+
+constraints             = h-bonds
+constraint_algorithm    = LINCS
+continuation            = yes
+
+nstcomm                 = 100
+comm_mode               = linear
+comm_grps               = MEMB SOLV

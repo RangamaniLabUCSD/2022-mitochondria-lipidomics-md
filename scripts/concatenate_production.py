@@ -25,10 +25,8 @@ def _concatenate_trajectory(sim: str) -> None:
 
     subprocess.run("gmx trjcat -f production+100*.trr -o production_all.trr", shell=True, check=True)
 
-
-# Generate index files and process trajectories in parallel
 jobs = []
-for sim in tqdm(util.simulations, desc=f"Generating ndx and analysis.tpr"):
+for sim in tqdm(util.simulations, desc=f"Concatenate trajectories"):
     # sim = f"{sim}_small"
     source_dir = util.sim_path / str(sim)
     staging_dir = util.analysis_path / str(sim)

@@ -127,3 +127,4 @@ dmypy.json
 
 # Pyre type checker
 .pyre/
+scripts/mc_noobject_2nm.pickle

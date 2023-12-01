@@ -55,15 +55,18 @@ def _stage(sim):
 
     ### GET NUMBERS CORRESPONDING TO INDEXES
     system_index_cmd = (
-        f"{util.gmxls_bin} check -n {ndx} | grep system | awk '{{ print $1 }}'"
+        f"{util.gmxls_bin} check -n {ndx} | grep SYSTEM | awk '{{ print $1 }}'"
     )
     p = subprocess.run(system_index_cmd, shell=True, check=True, capture_output=True)
     if not p.stdout:
         raise RuntimeError("Could not identify system index")
     system_index = int(p.stdout)
 
+    # membrane_index_cmd = (
+    #     f"{util.gmxls_bin} check -n {ndx} | grep membrane | awk '{{ print $1 }}'"
+    # )
     membrane_index_cmd = (
-        f"{util.gmxls_bin} check -n {ndx} | grep membrane | awk '{{ print $1 }}'"
+        f"{util.gmxls_bin} check -n {ndx} | grep MEMB | awk '{{ print $1 }}'"
     )
     p = subprocess.run(membrane_index_cmd, shell=True, check=True, capture_output=True)
     if not p.stdout:
@@ -116,7 +119,8 @@ def calculate_stresses(sims):
         assert tpr.exists()
 
         # TODO: change this to not be a hardcoded number
-        for i in range(0, 40001):
+        # for i in range(0, 40001):
+        for i in range(0, 20001):
             frame = staging_dir / f"frames/frame{i}.trr"
             if not frame.exists():
                 print(f"Missing frame: {frame}")
@@ -229,8 +233,10 @@ if __name__ == "__main__":
     options = parser.parse_args()
 
     jobs = []
-    for sim in util.simulations:
-        jobs.append(f"{sim}_small")
+    # for sim in util.simulations:
+    #     jobs.append(f"{sim}_small")
+
+    jobs = util.aa_simulations
 
     if options.stage:
         stage(jobs)
