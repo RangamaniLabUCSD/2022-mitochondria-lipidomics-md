@@ -93,15 +93,15 @@ final_system_names = {
     4: "+CL2; 0S",
     5: "+CL2; +S",
     6: "+CL2; ++S",
-    7: "-CL1; 0S",
-    8: "-CL1; +S",
-    9: "-CL1; ++S",
-    10: "PO; CL1",
-    11: "DO; CL1",
-    12: "PO; PG",
-    13: "DO; PG",
-    14: "PO; CL2",
-    15: "DO; CL2",
+    7: "PG; 0S",
+    8: "PG; +S",
+    9: "PG; ++S",
+    10: "DO; CL1",
+    11: "PO; CL1",
+    12: "DO; CL2",
+    13: "PO; CL2",
+    14: "DO; PG",
+    15: "PO; PG",
     16: "Outer CL1",
     17: "Inner CL2",
     18: "Outer CL2",
@@ -625,11 +625,41 @@ def mean_curvature(Z, h):
 
     """
 
-    Zy, Zx = np.gradient(Z, h)
-    Zxy, Zxx = np.gradient(Zx, h)
-    Zyy, _ = np.gradient(Zy, h)
+    Zx, Zy = np.gradient(Z, h)
+    Zxx, Zxy = np.gradient(Zx, h)
+    _, Zyy = np.gradient(Zy, h)
 
     H = (1 + Zx**2) * Zyy + (1 + Zy**2) * Zxx - 2 * Zx * Zy * Zxy
     H = H / (2 * (1 + Zx**2 + Zy**2) ** (1.5))
 
     return H
+
+
+def gaussian_curvature(Z, h):
+    """
+    Calculate Gaussian curvature from Z cloud points.
+
+
+    Parameters
+    ----------
+    Z: np.ndarray.
+        Multidimensional array of shape (n,n).
+    varargs : list of scalar or array, optional
+        Spacing between f values. Default unitary spacing for all dimensions.
+        See np.gradient docs for more information.
+
+    Returns
+    -------
+    K : np.ndarray.
+        The result of Gaussian curvature of Z. Returns multidimensional
+        array object with values of Gaussian curvature of shape `(n, n)`.
+
+    """
+
+    Zx, Zy = np.gradient(Z, h)
+    Zxx, Zxy = np.gradient(Zx, h)
+    _, Zyy = np.gradient(Zy, h)
+
+    K = (Zxx * Zyy - (Zxy**2)) / (1 + (Zx**2) + (Zy**2)) ** 2
+
+    return K

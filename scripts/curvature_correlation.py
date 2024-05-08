@@ -1,4 +1,5 @@
 #!/usr/bin/env python
+
 import pickle
 import numpy as np
 from functools import partial
@@ -93,7 +94,7 @@ def get_midpoints(x):
     return ((x + np.roll(x, -1)) / 2)[:-1]
 
 
-def wrap_and_sanitize(pxy, gx, ts, mc):
+def wrap_and_sanitize(pxy, ts, mc):
     """Wrap coordinates and remove values too far from closest known point
 
     Args:
