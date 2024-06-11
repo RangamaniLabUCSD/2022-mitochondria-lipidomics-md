@@ -65,7 +65,7 @@ for sim in np.concatenate((util.simulations, ["1_vbt"])):
 
         hs = curvature_correlation_data[sim][lipid]
 
-        bin_range = [-0.1,0.1]
+        bin_range = [-0.02, 0.02]
 
         for style, style_ext in plot_styles:
             with plt.style.context(style):
@@ -106,7 +106,7 @@ for sim in np.concatenate((util.simulations, ["1_vbt"])):
 
                 ax.axvline(0, color=ecolor, linestyle="--", linewidth=1)
 
-                ax.set_xlabel(r" curvature (1/nm)")
+                ax.set_xlabel(r"Guassian curvature (1/nm^2)")
                 ax.set_ylabel(r"Density")
 
                 if sim == "1_vbt":
@@ -155,7 +155,7 @@ for sim in np.concatenate((util.simulations, ["1_vbt"])):
             continue
 
         hs = curvature_correlation_data[sim][lipid]
-        bin_range = [-0.1, 0.1]
+        bin_range = [-0.02, 0.02]
 
         hsn, hs_bins = np.histogram(hs, bins=101, range=tuple(bin_range), density=True)
         asn, as_bins = np.histogram(ahs, bins=101, range=tuple(bin_range), density=True)
@@ -217,7 +217,7 @@ for sim in np.concatenate((util.simulations, ["1_vbt"])):
             continue
 
         hs = curvature_correlation_data[sim][lipid]
-        bin_range = [-0.1, 0.1]
+        bin_range = [-0.02, 0.02]
         hsn, hs_bins = np.histogram(hs, bins=101, range=bin_range, density=True)
         asn, as_bins = np.histogram(ahs, bins=101, range=bin_range, density=True)
 

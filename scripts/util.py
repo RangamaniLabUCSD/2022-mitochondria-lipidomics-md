@@ -405,8 +405,8 @@ sim_path = scratch_path / "sims"
 sim_archive_path = archive_path / "sims"
 # scratch_sim_path = scratch_path / "sims"
 
-# mdp_path = source_control_path / "mdps_continuation"
-mdp_path = source_control_path / "aa_mdps_continuation"
+mdp_path = source_control_path / "mdps_vbt"
+# mdp_path = source_control_path / "aa_mdps_continuation"
 script_path = source_control_path / "scripts"
 
 analysis_path = scratch_path / "analysis"

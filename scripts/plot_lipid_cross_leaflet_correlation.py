@@ -156,6 +156,11 @@ def wrap_and_sanitize(pxy, ts, mc):
 
 
 # %%
+show_figs = True
+curr_fig_path = Path("Figures/cross-leaflet-spatial-corr")
+curr_fig_path.mkdir(parents=True, exist_ok=True)
+
+
 cross_leaflet_correlation = {}
 
 frames_to_average = 5
@@ -280,52 +285,52 @@ for sim in np.concatenate((util.simulations, ["1_vbt"])):
             acr[center, center],
         ]
 
-        # for style, style_ext in plot_styles:
-        #     with plt.style.context(style):
-        #         if style_ext:
-        #             ecolor = "white"
-        #         else:
-        #             ecolor = "black"
+        for style, style_ext in plot_styles:
+            with plt.style.context(style):
+                if style_ext:
+                    ecolor = "white"
+                else:
+                    ecolor = "black"
 
-        #         shape_size = xe[-1] / 10
-        #         fig, ax = plt.subplots(1, 1, figsize=(3, 3))  # sharex=True,
-        #         im = ax.imshow(
-        #             acr,
-        #             vmin=-0.1,
-        #             vmax=0.1,
-        #             extent=[-shape_size, shape_size, -shape_size, shape_size],
-        #             origin="lower",
-        #         )
+                shape_size = xe[-1] / 10
+                fig, ax = plt.subplots(1, 1, figsize=(3, 3))  # sharex=True,
+                im = ax.imshow(
+                    acr,
+                    vmin=-0.1,
+                    vmax=0.1,
+                    extent=[-shape_size, shape_size, -shape_size, shape_size],
+                    origin="lower",
+                )
 
-        #         fig.colorbar(im, ax=ax)
-        #         ax.set_ylabel("Y (nm)")
-        #         ax.set_xlabel("X (nm)")
+                fig.colorbar(im, ax=ax)
+                ax.set_ylabel("Y (nm)")
+                ax.set_xlabel("X (nm)")
 
-        #         limits = (-20, 20)
-        #         ax.set_xlim(*limits)
-        #         ax.set_ylim(*limits)
+                limits = (-20, 20)
+                ax.set_xlim(*limits)
+                ax.set_ylim(*limits)
 
-        #         if sim == "1_vbt":
-        #             fig.suptitle(f"1_vbt {k}")
-        #         else:
-        #             fig.suptitle(f"sim {util.sim_to_final_index[int(sim)]} {k}")
+                if sim == "1_vbt":
+                    fig.suptitle(f"1_vbt {k}")
+                else:
+                    fig.suptitle(f"sim {util.sim_to_final_index[int(sim)]} {k}")
 
-        #         fig.tight_layout()
+                fig.tight_layout()
 
-        #         if sim == "1_vbt":
-        #             save_fig(fig, curr_fig_path / f"1_vbt_correlation_{k}{style_ext}")
-        #         else:
-        #             save_fig(
-        #                 fig,
-        #                 curr_fig_path
-        #                 / f"{util.sim_to_final_index[int(sim)]}_correlation_{k}{style_ext}",
-        #             )
+                if sim == "1_vbt":
+                    save_fig(fig, curr_fig_path / f"1_vbt_correlation_{k}{style_ext}")
+                else:
+                    save_fig(
+                        fig,
+                        curr_fig_path
+                        / f"{util.sim_to_final_index[int(sim)]}_correlation_{k}{style_ext}",
+                    )
 
-        #         if show_figs:
-        #             plt.show()
+                if show_figs:
+                    plt.show()
 
-        #         fig.clear()
-        #         plt.close(fig)
+                fig.clear()
+                plt.close(fig)
 
 # %%
 def lighten_color(color, amount=0.5):
@@ -372,7 +377,14 @@ for sim in range(1, 16):
     for lipid in queries.keys():
         if lipid not in cross_leaflet_correlation[str(util.remapping_dict[sim])]:
             continue
-        # cross_leaflet_correlation[sim][k] = [max(acr.min(), acr.max(), key=abs), acr.min(), acr.max(), acr.mean(),  acr[20:23,20:23].mean(), acr[21,21]]
+        # cross_leaflet_correlation[sim][k] = [
+        #     max(acr.min(), acr.max(), key=abs),
+        #     acr.min(),
+        #     acr.max(),
+        #     acr.mean(),
+        #     acr[20:23, 20:23].mean(),
+        #     acr[center, center],
+        # ]
         vals.append(cross_leaflet_correlation[str(util.remapping_dict[sim])][lipid][5])
         colors.append(p[color_index[lipid]])
 
@@ -401,7 +413,7 @@ for style, style_ext in plot_styles:
             handles=patches, loc="upper center", ncols=4, bbox_to_anchor=(0.5, 1.13)
         )
 
-        ax.set_ylabel("Integrated Pearson")
+        ax.set_ylabel("Pearson's correlation")
         ax.set_xlabel("System")
 
         fig.tight_layout()

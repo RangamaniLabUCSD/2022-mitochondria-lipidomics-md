@@ -55,7 +55,7 @@ def _stage(sim):
 
     ### GET NUMBERS CORRESPONDING TO INDEXES
     system_index_cmd = (
-        f"{util.gmxls_bin} check -n {ndx} | grep SYSTEM | awk '{{ print $1 }}'"
+        f"{util.gmxls_bin} check -n {ndx} | grep system | awk '{{ print $1 }}'"
     )
     p = subprocess.run(system_index_cmd, shell=True, check=True, capture_output=True)
     if not p.stdout:
@@ -66,7 +66,7 @@ def _stage(sim):
     #     f"{util.gmxls_bin} check -n {ndx} | grep membrane | awk '{{ print $1 }}'"
     # )
     membrane_index_cmd = (
-        f"{util.gmxls_bin} check -n {ndx} | grep MEMB | awk '{{ print $1 }}'"
+        f"{util.gmxls_bin} check -n {ndx} | grep membrane | awk '{{ print $1 }}'"
     )
     p = subprocess.run(membrane_index_cmd, shell=True, check=True, capture_output=True)
     if not p.stdout:
@@ -120,7 +120,7 @@ def calculate_stresses(sims):
 
         # TODO: change this to not be a hardcoded number
         # for i in range(0, 40001):
-        for i in range(0, 20001):
+        for i in range(0, 40001):
             frame = staging_dir / f"frames/frame{i}.trr"
             if not frame.exists():
                 print(f"Missing frame: {frame}")
@@ -206,7 +206,7 @@ def average_z_profiles(sims):
             print(f"\t\t Missing frames dir at {stresscalc_dir}")
             continue
         else:
-            for i in range(0, 40001):
+            for i in range(0, 20001):
                 if not (stresscalc_dir / f"frames/frame{i}.dat0").exists():
                     print(
                         f"\t\t{stresscalc_dir / f'frames/frame{i}.dat0'} is missing..."
@@ -235,8 +235,8 @@ if __name__ == "__main__":
     jobs = []
     # for sim in util.simulations:
     #     jobs.append(f"{sim}_small")
-
-    jobs = util.aa_simulations
+    jobs = ["1_small_vbt"]
+    # jobs = util.aa_simulations
 
     if options.stage:
         stage(jobs)
@@ -245,5 +245,5 @@ if __name__ == "__main__":
         calculate_stresses(jobs)
 
     if options.postprocess:
-        # generate_z_profiles(jobs)
+        generate_z_profiles(jobs)
         average_z_profiles(jobs)

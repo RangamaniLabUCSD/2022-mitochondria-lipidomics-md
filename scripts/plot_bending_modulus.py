@@ -1519,18 +1519,19 @@ for style, style_ext in plot_styles:
 
 
 # %%
-areas = {}
+### AREA CALCULATION
+# areas = {}
 
-for sim in util.simulations:
-    gro = util.analysis_path / f"{sim}/po4_only.gro"
-    traj = util.analysis_path / f"{sim}/po4_all.xtc"
+# for sim in util.simulations:
+#     gro = util.analysis_path / f"{sim}/po4_only.gro"
+#     traj = util.analysis_path / f"{sim}/po4_all.xtc"
 
-    u = MDAnalysis.Universe(gro, str(traj), refresh_offsets=True)
-    dims = [u.dimensions[0] for ts in u.trajectory]
-    print(
-        f"{sim}: mean {np.mean(dims)}, min {np.min(dims)}, max {np.max(dims)} Angstroms"
-    )
-    areas[sim] = np.mean(dims) ** 2
+#     u = MDAnalysis.Universe(gro, str(traj), refresh_offsets=True)
+#     dims = [u.dimensions[0] for ts in u.trajectory]
+#     print(
+#         f"{sim}: mean {np.mean(dims)}, min {np.min(dims)}, max {np.max(dims)} Angstroms"
+#     )
+#     areas[sim] = np.mean(dims) ** 2
 
 
 # %%
