@@ -186,6 +186,7 @@ sets_to_consider = 200
 
 
 for sim in np.concatenate((util.simulations, ["1_vbt"])):
+# for sim in [util.remapping_dict[14]]:
     lipid_pair_spatial_correlation[sim] = {}
 
     print(f"sim {sim}")
@@ -205,6 +206,8 @@ for sim in np.concatenate((util.simulations, ["1_vbt"])):
     u = MDAnalysis.Universe(gro, str(traj), refresh_offsets=True)
     ag = determine_leaflets(u, po4_neighbor_sel)
 
+    factor = 2
+
     for pair in lipid_pairs:
         # get query strings for each lipid type
         q1 = queries[pair[0]]
@@ -213,8 +216,12 @@ for sim in np.concatenate((util.simulations, ["1_vbt"])):
         if len(u.select_atoms(q1)) == 0 or len(u.select_atoms(q2)) == 0:
             continue
 
-        binned_lipid1_density = np.zeros((sets_to_consider, h.shape[1], h.shape[2]))
-        binned_lipid2_density = np.zeros((sets_to_consider, h.shape[1], h.shape[2]))
+        binned_lipid1_density = np.zeros(
+            (sets_to_consider, h.shape[1] * factor, h.shape[2] * factor)
+        )
+        binned_lipid2_density = np.zeros(
+            (sets_to_consider, h.shape[1] * factor, h.shape[2] * factor)
+        )
 
         for i in range(sets_to_consider):
             lipid1_positions = []
@@ -252,25 +259,37 @@ for sim in np.concatenate((util.simulations, ["1_vbt"])):
             binned_lipid1_density[i], xe, ye = np.histogram2d(
                 lipid1_positions[:, 0],
                 lipid1_positions[:, 1],
-                bins=mc.n_x_bins,
+                bins=mc.n_x_bins * factor,
                 range=[
-                    [mc.x_range[0] - mc.x_step / 2, mc.x_range[1] - mc.x_step / 2],
-                    [mc.y_range[0] - mc.x_step / 2, mc.y_range[1] - mc.x_step / 2],
+                    [
+                        mc.x_range[0] - mc.x_step / factor / 2,
+                        mc.x_range[1] - mc.x_step / factor / 2,
+                    ],
+                    [
+                        mc.y_range[0] - mc.x_step / factor / 2,
+                        mc.y_range[1] - mc.x_step / factor / 2,
+                    ],
                 ],
-                # density=True,
+                density=True,
             )
             binned_lipid2_density[i], xe, ye = np.histogram2d(
                 lipid2_positions[:, 0],
                 lipid2_positions[:, 1],
-                bins=mc.n_x_bins,
+                bins=mc.n_x_bins * factor,
                 range=[
-                    [mc.x_range[0] - mc.x_step / 2, mc.x_range[1] - mc.x_step / 2],
-                    [mc.y_range[0] - mc.x_step / 2, mc.y_range[1] - mc.x_step / 2],
+                    [
+                        mc.x_range[0] - mc.x_step / factor / 2,
+                        mc.x_range[1] - mc.x_step / factor / 2,
+                    ],
+                    [
+                        mc.y_range[0] - mc.x_step / factor / 2,
+                        mc.y_range[1] - mc.x_step / factor / 2,
+                    ],
                 ],
-                # density=True,
+                density=True,
             )
-        binned_lipid1_density /= frames_to_average
-        binned_lipid2_density /= frames_to_average
+        # binned_lipid1_density /= frames_to_average
+        # binned_lipid2_density /= frames_to_average
         binned_lipid1_density -= np.mean(binned_lipid1_density)
         binned_lipid2_density -= np.mean(binned_lipid2_density)
 
@@ -292,16 +311,18 @@ for sim in np.concatenate((util.simulations, ["1_vbt"])):
 
         center = int(acr.shape[0] / 2)
 
-        lipid_pair_spatial_correlation[sim][pair] = [
-            max(acr.min(), acr.max(), key=abs),
-            acr.min(),
-            acr.max(),
-            acr.mean(),
-            acr[20:23, 20:23].mean(),
-            acr[center, center],
-        ]
+        # lipid_pair_spatial_correlation[sim][pair] = [
+        #     max(acr.min(), acr.max(), key=abs),
+        #     acr.min(),
+        #     acr.max(),
+        #     acr.mean(),
+        #     acr[20:23, 20:23].mean(),
+        #     acr[center, center],
+        # ]
 
         pair_name = f"{pair[0]}-{pair[1]}"
+
+        print(sim, pair_name, np.min(acr), np.max(acr))
 
         for style, style_ext in plot_styles:
             with plt.style.context(style):
@@ -318,13 +339,14 @@ for sim in np.concatenate((util.simulations, ["1_vbt"])):
                     vmax=0.1,
                     extent=[-shape_size, shape_size, -shape_size, shape_size],
                     origin="lower",
+                    # cmap="PRGn"
                 )
 
                 fig.colorbar(im, ax=ax)
                 ax.set_ylabel("Y (nm)")
                 ax.set_xlabel("X (nm)")
 
-                limits = (-20, 20)
+                limits = (-10, 10)
                 ax.set_xlim(*limits)
                 ax.set_ylim(*limits)
 
@@ -336,7 +358,9 @@ for sim in np.concatenate((util.simulations, ["1_vbt"])):
                 fig.tight_layout()
 
                 if sim == "1_vbt":
-                    save_fig(fig, curr_fig_path / f"1_vbt_correlation_{pair_name}{style_ext}")
+                    save_fig(
+                        fig, curr_fig_path / f"1_vbt_correlation_{pair_name}{style_ext}"
+                    )
                 else:
                     save_fig(
                         fig,

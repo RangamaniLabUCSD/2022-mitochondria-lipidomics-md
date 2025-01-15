@@ -906,7 +906,7 @@ for style, style_ext in plot_styles:
         # ax.axhline(14.5, color="k")
         # ax.axhline(18.5, color="k")
 
-        ax.set_xlabel(r"$K_c*c_0$ ($pN$)")
+        ax.set_xlabel(r"$-K_c*c_0$ ($pN$)")
         ax.set_ylabel(r"System")
 
         # ax.set_xlim(0,40)
@@ -1046,7 +1046,7 @@ for style, style_ext in plot_styles:
         # ax.axhline(14.5, color="k")
         # ax.axhline(18.5, color="k")
 
-        ax.set_ylabel(r"$K_c*c_0$ ($pN$)")
+        ax.set_ylabel(r"$-K_c*c_0$ ($pN$)")
         ax.set_xlabel(r"System")
 
         # ax.set_xlim(0,40)
@@ -1117,7 +1117,7 @@ for style, style_ext in plot_styles:
                 ecolor=ecolor,
             )
 
-        ax.set_ylabel(r"$K_c*c_0$ ($pN$)")
+        ax.set_ylabel(r"$-K_c*c_0$ ($pN$)")
         ax.set_xlabel(r"System")
 
         # ax.set_xlim(0,40)
@@ -1193,7 +1193,7 @@ for style, style_ext in plot_styles:
                 ecolor=ecolor,
             )
 
-        ax.set_ylabel(r"$K_cc_0$ ($pN$)")
+        ax.set_ylabel(r"$-K_cc_0$ ($pN$)")
         ax.set_xlabel(r"System")
 
         # ax.set_xlim(0,40)
@@ -1273,7 +1273,7 @@ for style, style_ext in plot_styles:
             ecolor=ecolor,
         )
 
-        ax.set_ylabel(r"$K_c*c_0$ ($pN$)")
+        ax.set_ylabel(r"$-K_c*c_0$ ($pN$)")
         ax.set_xlabel(r"System")
 
         # ax.set_xlim(0,40)
@@ -1350,7 +1350,7 @@ for style, style_ext in plot_styles:
                 ecolor=ecolor,
             )
 
-        ax.set_ylabel(r"$K_cc_0$ ($pN$)")
+        ax.set_ylabel(r"$-K_cc_0$ ($pN$)")
         ax.set_xlabel(r"AA System")
 
         # ax.set_xlim(0,40)
@@ -1402,11 +1402,11 @@ c0 = {}
 one_over_c0 = {}
 for sim in range(1, 22):
     remapped = util.remapping_dict[sim]
-    value = f_cubic_dat[remapped][0] / (kc_mean_std[remapped][0] * 4.18336647)
+    value = f_cubic_dat[remapped][0] / (kc_mean_std[remapped][0] * 4.18336647 / 2)
     error = (
         np.sqrt(
             (f_cubic_dat[remapped][1] / f_cubic_dat[remapped][0]) ** 2
-            + (kc_mean_std[remapped][1] / kc_mean_std[remapped][0]) ** 2
+            + ((kc_mean_std[remapped][1] / 2) / (kc_mean_std[remapped][0] / 2)) ** 2
         )
         * value
     )
@@ -1528,7 +1528,7 @@ for style, style_ext in plot_styles:
         # ax.axhline(14.5, color="k")
         # ax.axhline(18.5, color="k")
 
-        ax.set_xlabel(r"1/c0 (nm)")
+        ax.set_xlabel(r"-1/c0 (nm)")
         ax.set_ylabel(r"System")
 
         # ax.set_xlim(0, 40)
@@ -1636,7 +1636,7 @@ for style, style_ext in plot_styles:
         # ax.axhline(14.5, color="k")
         # ax.axhline(18.5, color="k")
 
-        ax.set_xlabel(r"c0 (nm-1)")
+        ax.set_xlabel(r"-c0 (nm-1)")
         ax.set_ylabel(r"System")
 
         # ax.set_xlim(0, 40)
@@ -1775,7 +1775,7 @@ for style, style_ext in plot_styles:
         # ax.axhline(14.5, color="k")
         # ax.axhline(18.5, color="k")
 
-        ax.set_ylabel(r"c0 (nm$^{-1}$)")
+        ax.set_ylabel(r"-c0 (nm$^{-1}$)")
         ax.set_xlabel(r"System")
 
         # ax.set_xlim(0, 40)
@@ -1873,7 +1873,7 @@ for style, style_ext in plot_styles:
         # ax.axhline(14.5, color="k")
         # ax.axhline(18.5, color="k")
 
-        ax.set_ylabel(r"c0 (nm$^{-1}$)")
+        ax.set_ylabel(r"-c0 (nm$^{-1}$)")
         ax.set_xlabel(r"System")
 
         # ax.set_xlim(0, 40)
@@ -1971,7 +1971,7 @@ for style, style_ext in plot_styles:
         # ax.axhline(14.5, color="k")
         # ax.axhline(18.5, color="k")
 
-        ax.set_ylabel(r"c0 (nm$^{-1}$)")
+        ax.set_ylabel(r"-c0 (nm$^{-1}$)")
         ax.set_xlabel(r"System")
 
         # ax.set_xlim(0, 40)
@@ -2075,7 +2075,7 @@ for style, style_ext in plot_styles:
         # ax.axhline(14.5, color="k")
         # ax.axhline(18.5, color="k")
 
-        ax.set_ylabel(r"c0 (nm$^{-1}$)")
+        ax.set_ylabel(r"-c0 (nm$^{-1}$)")
         ax.set_xlabel(r"System")
 
         # ax.set_xlim(0, 40)

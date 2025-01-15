@@ -139,7 +139,7 @@ def print_neighbor_analysis(dataset, prefix=""):
         print("# of each lipid around row lipid\n", df_normed_counts)
 
         rowwise_sum = np.sum(normed_counts, axis=1).reshape(-1, 1)
-        # print(np.array2string(rowwise_sum, max_line_width=np.inf))
+        print(np.array2string(rowwise_sum, max_line_width=np.inf))
 
         likelihood_count = np.divide(
             normed_counts,
@@ -173,7 +173,7 @@ neighbor_enrichment = {}
 
 for sim in util.simulations:
     with open(
-        util.analysis_path / f"{sim}/neighbor_enrichment_leaflet_glo.pickle", "rb"
+        util.analysis_path / f"{sim}/neighbor_enrichment_leaflet_glo_20.pickle", "rb"
     ) as handle:
         neighbor_enrichment[sim] = pickle.load(handle)
 
@@ -194,7 +194,7 @@ import cmasher as cmr
 from mpl_toolkits.axes_grid1 import make_axes_locatable
 
 show_figs = True
-curr_fig_path = Path("Figures/neighborhood/")
+curr_fig_path = Path("Figures/neighborhood_20/")
 curr_fig_path.mkdir(parents=True, exist_ok=True)
 
 vmin = 0.7
@@ -207,8 +207,8 @@ dataset = neighbor_enrichment
 for sim in util.simulations:
     # print(f"System {util.sim_to_final_index[sim]}: {util.system_names[sim]}")
 
-    raw_baseline = []
-    baseline = []
+    raw_baseline = []   # Integer numbers of lipids
+    baseline = []       # Normed baseline number of lipids
     s = ""
     for lipid in lipids:
         if lipid in compositions[sim, "raw_composition"]:
@@ -229,6 +229,7 @@ for sim in util.simulations:
     # Keep only back half of trajectory
     N = int(0.5 * len(counts_per_frame))
     counts = np.mean(counts_per_frame[N:-1], axis=0)  # mean counts per frame
+    # At this point we have the mean counts of all lipids of a each type
 
     # Copy counts across diagonal which must be symmetric
     for i in range(0, len(lipids)):
@@ -239,15 +240,17 @@ for sim in util.simulations:
 
     # print(pd.DataFrame(counts, columns=lipids, index=lipids))
 
-    # Normalize by number of each lipid within leaflet
+    # Normalize by number of each lipid type within leaflet so that we account for number of
+    # origin lipid
+    # In other words compute the number of each lipid type around each origin (row) lipid
     # ROWWISE DIVISION...
     normed_counts = np.divide(
         counts, raw_baseline, out=np.zeros_like(counts), where=raw_baseline != 0
     )
     df_normed_counts = pd.DataFrame(normed_counts, columns=lipids, index=lipids)
     # df_normed_counts.to_csv(f"sheets/sim_{util.sim_to_final_index[sim]}_nlipids_{prefix}.csv")
-
     # print("# of each lipid around row lipid\n", df_normed_counts)
+
 
     rowwise_sum = np.sum(normed_counts, axis=1).reshape(-1, 1)
     # print(np.array2string(rowwise_sum, max_line_width=np.inf))
@@ -343,7 +346,7 @@ for sim in util.simulations:
 
 
 # %%
-print_neighbor_analysis(neighbor_enrichment, prefix="15A")
+print_neighbor_analysis(neighbor_enrichment, prefix="20A")
 
 
 # %%

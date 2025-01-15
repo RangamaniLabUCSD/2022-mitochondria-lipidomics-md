@@ -109,7 +109,7 @@ def get_midpoints(x):
 # %%
 def fftAutocovariance(signal):
     """
-    FFT based calculation of the autocovariance function <df(0) - df(t)> without wrapping
+    FFT based calculation of the autocovariance function <df(0)*df(t)> without wrapping
     """
     centered_signal = signal - np.mean(signal, axis=0)
     zero_padding = np.zeros_like(centered_signal)
@@ -126,7 +126,7 @@ def fftAutocovariance(signal):
 
 def fftAutocorrelation(signal):
     """
-    FFT calculation of the normalized autocorrelation <df(0) - df(t)>/var(f) without wrapping
+    FFT calculation of the normalized autocorrelation <df(0)*df(t)>/var(f) without wrapping
     """
     autocovariance = fftAutocovariance(signal)
     variance = autocovariance[0]
@@ -404,7 +404,7 @@ for style, style_ext in plot_styles:
         ax.set_ylabel("Time Autocorrelation")
         ax.set_xlabel("Frame Lag (ns)")
 
-        ax.axvline(5, color=ecolor, linestyle="--", linewidth=0.5)
+        ax.axvline(5*500/1000, color=ecolor, linestyle="--", linewidth=0.5)
 
         # Creating legend with color box
         patches = [

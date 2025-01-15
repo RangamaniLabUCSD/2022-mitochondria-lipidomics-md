@@ -363,27 +363,27 @@ system_compositions = {
 }
 
 remapping_order = [
-    1,
-    2,
-    15,
-    16,
-    17,
-    24,
-    4,
-    5,
-    12,
-    9,
-    8,
-    21,
-    20,
-    11,
-    10,
-    13,
-    14,
-    22,
-    23,
-    7,
-    19,
+    1,      #1
+    2,      #2
+    15,     #3
+    16,     #4
+    17,     #5
+    24,     #6
+    4,      #7
+    5,      #8
+    12,     #9
+    9,      #10
+    8,      #11
+    21,     #12
+    20,     #13
+    11,     #14
+    10,     #15
+    13,     #16
+    14,     #17
+    22,     #18
+    23,     #19
+    7,      #20
+    19,     #21
 ]
 # Go from final order to simulation order
 remapping_dict = dict([(i, k) for i, k in enumerate(remapping_order, start=1)])
@@ -630,7 +630,7 @@ def mean_curvature(Z, h):
     _, Zyy = np.gradient(Zy, h)
 
     H = (1 + Zx**2) * Zyy + (1 + Zy**2) * Zxx - 2 * Zx * Zy * Zxy
-    H = H / (2 * (1 + Zx**2 + Zy**2) ** (1.5))
+    H = -H / (2 * (1 + Zx**2 + Zy**2) ** (1.5))
 
     return H
 

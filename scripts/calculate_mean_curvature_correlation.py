@@ -19,7 +19,7 @@ from MDAnalysis.analysis.leaflet import LeafletFinder
 
 
 # Location to save the final data
-curvature_correlation_fd = util.analysis_path / "curvature_correlation.pickle"
+curvature_correlation_fd = util.analysis_path / "mean_curvature_correlation_negative.pickle"
 
 
 def largest_groups(atoms):

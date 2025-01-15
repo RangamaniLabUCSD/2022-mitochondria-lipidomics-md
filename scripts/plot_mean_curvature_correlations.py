@@ -42,7 +42,7 @@ plot_styles = [
 
 # %%
 # Location to save the final data
-curvature_correlation_fd = util.analysis_path / "curvature_correlation.pickle"
+curvature_correlation_fd = util.analysis_path / "mean_curvature_correlation_negative.pickle"
 
 if curvature_correlation_fd.exists():
     with open(curvature_correlation_fd, "rb") as handle:

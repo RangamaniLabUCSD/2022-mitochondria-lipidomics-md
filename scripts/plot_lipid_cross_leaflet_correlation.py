@@ -134,6 +134,7 @@ def fftAutocorrelation(signal):
     # else:
     return autocovariance / variance
 
+
 def wrap_and_sanitize(pxy, ts, mc):
     """Wrap coordinates and remove values too far from closest known point
 
@@ -146,7 +147,7 @@ def wrap_and_sanitize(pxy, ts, mc):
         _type_: _description_
     """
     gx = mc.x_range[1] - mc.x_step
-    
+
     # wrap PBC if point is more than half step greater than the closest data value
     if ts.dimensions[0] > mc.x_range[1] - mc.x_step / 2:
         pxy = np.where(pxy > gx + mc.x_step / 2, pxy - ts.dimensions[0], pxy)
@@ -285,6 +286,8 @@ for sim in np.concatenate((util.simulations, ["1_vbt"])):
             acr[center, center],
         ]
 
+        print(sim, np.min(acr), np.max(acr))
+
         for style, style_ext in plot_styles:
             with plt.style.context(style):
                 if style_ext:
@@ -300,6 +303,7 @@ for sim in np.concatenate((util.simulations, ["1_vbt"])):
                     vmax=0.1,
                     extent=[-shape_size, shape_size, -shape_size, shape_size],
                     origin="lower",
+                    # cmap="PRGn"
                 )
 
                 fig.colorbar(im, ax=ax)
@@ -331,6 +335,201 @@ for sim in np.concatenate((util.simulations, ["1_vbt"])):
 
                 fig.clear()
                 plt.close(fig)
+
+
+# %%
+
+import itertools
+
+# ALL BY ALL CROSS LEAFLET SPATIAL CORRELATION
+show_figs = True
+curr_fig_path = Path("Figures/all-all-cross-leaflet-spatial-corr")
+curr_fig_path.mkdir(parents=True, exist_ok=True)
+
+
+all_cross_leaflet_correlation = {}
+
+frames_to_average = 5
+sets_to_consider = 200
+
+
+keys = queries.keys()
+
+
+for sim in np.concatenate((util.simulations, ["1_vbt"])):
+    all_cross_leaflet_correlation[sim] = {}
+
+    print(f"sim {sim}")
+    with open(
+        util.analysis_path / f"{sim}/membrane_curvature_2nm.pickle", "rb"
+    ) as handle:
+        mc = pickle.load(handle)
+
+    h = mc.results["height"][1:]
+    # mean_curvatures = np.zeros_like(h)
+    # for i in range(h.shape[0]):
+    #     mean_curvatures[i] = util.mean_curvature(h[i], mc.x_step)
+
+    gro = util.analysis_path / f"{sim}/po4_only.gro"
+    traj = util.analysis_path / f"{sim}/po4_all.xtc"
+
+    u = MDAnalysis.Universe(gro, str(traj), refresh_offsets=True)
+    ag = determine_leaflets(u, po4_neighbor_sel)
+
+    for k1, k2 in itertools.product(queries.keys(), queries.keys()):
+        print(f"analyzing lipid {k}")
+
+        q1 = queries[k1]
+        q2 = queries[k2]
+
+        if len(u.select_atoms(q1)) == 0 or len(u.select_atoms(q2)) == 0:
+            continue
+
+        binned_lipid_density_upper = np.zeros(
+            (sets_to_consider, h.shape[1], h.shape[2])
+        )
+        binned_lipid_density_lower = np.zeros(
+            (sets_to_consider, h.shape[1], h.shape[2])
+        )
+
+        for i in range(sets_to_consider):
+            upper_positions = []
+            lower_positions = []
+
+            if i == 0:
+                for ts in u.trajectory[-frames_to_average:]:
+                    xy = wrap_and_sanitize(
+                        ag["upper"].select_atoms(q1).positions[:, 0:2], ts, mc
+                    )
+                    upper_positions.append(xy)
+                    xy = wrap_and_sanitize(
+                        ag["lower"].select_atoms(q2).positions[:, 0:2], ts, mc
+                    )
+                    lower_positions.append(xy)
+            else:
+                for ts in u.trajectory[
+                    -frames_to_average * (i + 1) : -frames_to_average * i
+                ]:
+                    xy = wrap_and_sanitize(
+                        ag["upper"].select_atoms(q1).positions[:, 0:2], ts, mc
+                    )
+                    upper_positions.append(xy)
+                    xy = wrap_and_sanitize(
+                        ag["lower"].select_atoms(q2).positions[:, 0:2], ts, mc
+                    )
+                    lower_positions.append(xy)
+            # Convert to numpy array
+            upper_positions = np.vstack(upper_positions)
+            lower_positions = np.vstack(lower_positions)
+
+            binned_lipid_density_upper[i], xe, ye = np.histogram2d(
+                upper_positions[:, 0],
+                upper_positions[:, 1],
+                bins=mc.n_x_bins,
+                range=[
+                    [mc.x_range[0] - mc.x_step / 2, mc.x_range[1] - mc.x_step / 2],
+                    [mc.y_range[0] - mc.x_step / 2, mc.y_range[1] - mc.x_step / 2],
+                ],
+                density=True,
+            )
+
+            binned_lipid_density_lower[i], xe, ye = np.histogram2d(
+                lower_positions[:, 0],
+                lower_positions[:, 1],
+                bins=mc.n_x_bins,
+                range=[
+                    [mc.x_range[0] - mc.x_step / 2, mc.x_range[1] - mc.x_step / 2],
+                    [mc.y_range[0] - mc.x_step / 2, mc.y_range[1] - mc.x_step / 2],
+                ],
+                density=True,
+            )
+
+        binned_lipid_density_upper -= np.mean(binned_lipid_density_upper)
+        binned_lipid_density_lower -= np.mean(binned_lipid_density_lower)
+
+        ## COMPUTE 2D SPATIAL CORRELATION
+        acr = []
+        for i in range(sets_to_consider):
+            acr.append(
+                signal.correlate2d(
+                    binned_lipid_density_upper[i],
+                    binned_lipid_density_lower[i],
+                    boundary="wrap",
+                )
+                / binned_lipid_density_upper.shape[1] ** 2
+                / (
+                    np.std(binned_lipid_density_upper[i])
+                    * np.std(binned_lipid_density_lower[i])
+                )
+            )
+
+        acr = np.array(acr)
+        acr = np.mean(acr, axis=0)
+
+        center = int(acr.shape[0] / 2)
+
+        all_cross_leaflet_correlation[sim][(k1, k2)] = [
+            max(acr.min(), acr.max(), key=abs),
+            acr.min(),
+            acr.max(),
+            acr.mean(),
+            acr[20:23, 20:23].mean(),
+            acr[center, center],
+        ]
+
+
+        print(sim, np.min(acr), np.max(acr))
+
+        for style, style_ext in plot_styles:
+            with plt.style.context(style):
+                if style_ext:
+                    ecolor = "white"
+                else:
+                    ecolor = "black"
+
+                shape_size = xe[-1] / 10
+                fig, ax = plt.subplots(1, 1, figsize=(3, 3))  # sharex=True,
+                im = ax.imshow(
+                    acr,
+                    vmin=-0.1,
+                    vmax=0.1,
+                    extent=[-shape_size, shape_size, -shape_size, shape_size],
+                    origin="lower",
+                    # cmap="PRGn"
+                )
+
+                fig.colorbar(im, ax=ax)
+                ax.set_ylabel("Y (nm)")
+                ax.set_xlabel("X (nm)")
+
+                limits = (-20, 20)
+                ax.set_xlim(*limits)
+                ax.set_ylim(*limits)
+
+                if sim == "1_vbt":
+                    fig.suptitle(f"1_vbt {k1}-{k2}")
+                else:
+                    fig.suptitle(f"sim {util.sim_to_final_index[int(sim)]} {k1}-{k2}")
+
+                fig.tight_layout()
+
+                if sim == "1_vbt":
+                    save_fig(fig, curr_fig_path / f"1_vbt_correlation_{k1}_{k2}{style_ext}")
+                else:
+                    save_fig(
+                        fig,
+                        curr_fig_path
+                        / f"{util.sim_to_final_index[int(sim)]}_correlation_{k1}_{k2}{style_ext}",
+                    )
+
+                if show_figs:
+                    plt.show()
+
+                fig.clear()
+                plt.close(fig)
+
+np.save("all-cross-leaflet.npy", all_cross_leaflet_correlation)
+
 
 # %%
 def lighten_color(color, amount=0.5):
@@ -418,7 +617,7 @@ for style, style_ext in plot_styles:
 
         fig.tight_layout()
 
-        save_fig(fig, curr_fig_path / f"Pearson correlation{style_ext}")
+        save_fig(fig, curr_fig_path / f"cross_leaflet_pearson_correlation{style_ext}")
 
         if show_figs:
             plt.show()
