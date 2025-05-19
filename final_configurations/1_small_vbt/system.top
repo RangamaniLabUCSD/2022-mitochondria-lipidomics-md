@@ -1,0 +1,27 @@
+#include "../toppar/martini_v2.2.itp"
+
+#include "../toppar/martini_v2.0_lipids_all_201506.itp"
+
+#include "../toppar/martini_v2.0_ions.itp"
+
+[ system ]
+; name
+INSANE! Membrane UpperLeaflet>POPC:DOPC:POPE:DOPE:CDL1=12.0:46.0:3.0:27.0:12.0 LowerLeaflet>POPC:DOPC:POPE:DOPE:CDL1=12.0:46.0:3.0:27.0:12.0
+
+
+[ molecules ]
+; name  number
+POPC            43
+DOPC           166
+POPE            10
+DOPE            97
+CDL1            43
+POPC            43
+DOPC           166
+POPE            10
+DOPE            97
+CDL1            43
+W            34333
+WF            3814
+NA             463
+CL             377

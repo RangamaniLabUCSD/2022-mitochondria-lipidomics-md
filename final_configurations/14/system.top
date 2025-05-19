@@ -1,0 +1,22 @@
+#include "../toppar/martini_v2.2.itp"
+
+#include "../toppar/martini_v2.0_lipids_all_201506.itp"
+
+#include "../toppar/martini_v2.0_ions.itp"
+
+[ system ]
+; name
+INSANE! Membrane UpperLeaflet>DOPC:DOPE:DOPG=50.0:30.0:20.0 LowerLeaflet>DOPC:DOPE:DOPG=50.0:30.0:20.0
+
+
+[ molecules ]
+; name  number
+DOPC          1352
+DOPE           811
+DOPG           540
+DOPC          1352
+DOPE           811
+DOPG           540
+W           260953
+NA            3413
+CL            2333

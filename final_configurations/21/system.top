@@ -1,0 +1,17 @@
+#include "../toppar/martini_v2.2.itp"
+
+#include "../toppar/martini_v2.0_lipids_all_201506.itp"
+
+#include "../toppar/martini_v2.0_ions.itp"
+
+[ system ]
+; name
+INSANE! Membrane UpperLeaflet>M2.CDL2=100.0 LowerLeaflet>M2.CDL2=100.0
+
+
+[ molecules ]
+; name  number
+CDL2          2704
+CDL2          2704
+W           251627
+NA           10816

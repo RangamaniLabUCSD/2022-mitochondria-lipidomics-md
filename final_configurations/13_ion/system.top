@@ -1,0 +1,22 @@
+#include "../toppar/martini_v2.2.itp"
+
+#include "../toppar/martini_v2.0_lipids_all_201506.itp"
+
+#include "../toppar/martini_v2.0_ions.itp"
+
+[ system ]
+; name
+INSANE! Membrane UpperLeaflet>M2.POPC:M2.POPE:M2.CDL2=50.0:30.0:20.0 LowerLeaflet>M2.POPC:M2.POPE:M2.CDL2=50.0:30.0:20.0
+
+
+[ molecules ]
+; name  number
+POPC          1352
+POPE           811
+CDL2           540
+POPC          1352
+POPE           811
+CDL2           540
+W           248883
+NA               6349
+CL               4189

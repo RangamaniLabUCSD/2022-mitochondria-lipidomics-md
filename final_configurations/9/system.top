@@ -1,0 +1,28 @@
+#include "../toppar/martini_v2.2.itp"
+
+#include "../toppar/martini_v2.0_lipids_all_201506.itp"
+
+#include "../toppar/martini_v2.0_ions.itp"
+
+[ system ]
+; name
+INSANE! Membrane UpperLeaflet>POPC:DOPC:POPE:DOPE:POPG:DOPG=17.0:26.0:22.0:21.0:12.0:2.0 LowerLeaflet>POPC:DOPC:POPE:DOPE:POPG:DOPG=17.0:26.0:22.0:21.0:12.0:2.0
+
+
+[ molecules ]
+; name  number
+POPC           459
+DOPC           703
+POPE           594
+DOPE           567
+POPG           324
+DOPG            54
+POPC           459
+DOPC           703
+POPE           594
+DOPE           567
+POPG           324
+DOPG            54
+W           260963
+NA            3251
+CL            2495
